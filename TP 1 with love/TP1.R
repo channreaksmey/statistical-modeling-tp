@@ -4,7 +4,6 @@
 # Task 1: Galton Inheredity
 
 # install.packages("HistData") for the first time you need to install the package
-install.packages("HistData")
 library(HistData)
 data(Galton)
 Galton <- data.frame(Galton)
@@ -82,11 +81,10 @@ cat("Correlation: ", round(cor(Galton$parent, Galton$child), 4), "\n")
 # Task 2: Munich Rent Index of 1999
 
 # install.packages("gamlss.data") for the first time you need to install the package
-install.packages("gamlss.data")
 library(gamlss.data)
 data(rent99)
 rent99 <- data.frame(rent99)
-install.packages("dplyr")
+# install.packages("dplyr")
 library(dplyr)
 glimpse(rent99)
 
@@ -178,7 +176,7 @@ plot(rent99$yearc, rent99$rentsqm,
      ylab = "net rent per sqm in Euro")
 
 # c. Reconstruct the cluster scatter plot below
-install.packages("ggplot2")
+# install.packages("ggplot2")
 library(ggplot2)
 # Compute average values per cluster
 rent_area <- rent99 %>%
@@ -277,8 +275,8 @@ legend("topright",
 # • Pop: 2001 population age 16 and over
 # • Tax: gasoline state tax rate, cents per gallon
 # install.packages("alr4") for the first time you need to install the package
-options(timeout = 300)
-install.packages("alr4")
+# options(timeout = 300)
+# install.packages("alr4")
 library(alr4)
 data(fuel2001)
 fuel2001 <- data.frame(fuel2001)
@@ -297,17 +295,198 @@ fuel2001$log_Miles
 # b. Based on the goal of the task
 
 # • Define response variable
-# Based on the goal, the response variable should be a measure that directly 
-# captures fuel consumption patterns which are
-# fuel consumption per capita
-fuel2001$fuel_per_capita <- fuel2001$FuelC / fuel2001$Pop
-fuel2001$fuel_per_capita
-# fuel consumption per vehicle
-fuel2001$fuel_per_vehicle <- fuel2001$FuelC / fuel2001$Drivers
-fuel2001$fuel_per_vehicle 
+# Goal: to understand how fuel consumption varies over the 50 United States and the District of Columbia
+# Based on the goal, the response variable should be FuelC which represents gas sold for road use
+y <- fuel2001$FuelC
+# Examine the response variable
+summary(fuel2001$FuelC)
+# Visualize distribution of fuel comsumption across all states
+hist(fuel2001$FuelC,
+     main = "Distribution of Fuel Comsumption Across All States",
+     xlab = "Fuel Comsumption (thousands of gallons)",
+     col = "lightblue",
+     breaks = 15
+     )
 
 # • Study the overview of each variable by using initial descriptive and graphical univariate analysis
+# install.packages("psych")
+library(psych)
+describe(fuel2001)
+
+# Drivers
+hist(fuel2001$Drivers,
+     main = "Distribution of Licensed Drivers",
+     xlab = "Number of Drivers",
+     col = "lightblue",
+     breaks = 20
+     )
+boxplot(fuel2001$Drivers,
+        main = "Boxplot: Licensed Drivers",
+        ylab = "Number of Drivers",
+        col = "lightblue",
+        horizontal = FALSE
+        )
+# FuelC
+hist(fuel2001$FuelC,
+     main = "Distribution of Fuel Consumption",
+     xlab = "gas sold",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$FuelC,
+        main = "Boxplot: Fuel Consumption",
+        ylab = "gas sold",
+        col = "lightblue"
+        )
+# Income
+hist(fuel2001$Income,
+     main = "Distribution of Income",
+     xlab = "Income per person",
+     col = "lightblue",
+     breaks = 20
+    )
+boxplot(fuel2001$Income,
+        main = "Boxplot: Income",
+        ylab = "Income per person",
+        col = "lightblue",
+        horizontal = FALSE
+        )
+# Miles
+hist(fuel2001$Miles,
+     main = "Distribution of Miles",
+     xlab = "Miles of Federal-aid Highway",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$Income,
+        main = "Boxplot: Miles",
+        ylab = "Miles of Federal-aid Highway",
+        col = "lightblue",
+        horizontal = FALSE
+)
+
+# Pop
+hist(fuel2001$Pop,
+     main = "Distribution of Population",
+     xlab = "Population of age 16 and over",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$Pop,
+        main = "Boxplot: Population",
+        ylab = "Population of age 16 and over",
+        col = "lightblue",
+        horizontal = FALSE
+)
+# Tax
+hist(fuel2001$Tax,
+     main = "Distribution of Tax",
+     xlab = "Tax rate for gasoline",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$Income,
+        main = "Boxplot: Tax",
+        ylab = "Tax rate for gasoline",
+        col = "lightblue",
+        horizontal = FALSE
+)
 
 # • Construct the correlation plots across the variables
+# install.packages("corrplot")
+# install.packages("PerformanceAnalytics")
+# install.packages("GGally")
+library(corrplot)
+library(PerformanceAnalytics)
+library(GGally)
+library(ggplot2)
+
+# Correlation Matrix
+cor_matrix <- cor(fuel2001)
+round(cor_matrix, 3)
+
+# Correlation Plot
+corrplot(cor_matrix,
+         method = "color",
+         type = "upper",
+         order = "hclust",
+         tl.col = "black",
+         tl.srt = 45,
+         addCoef.col = "black",
+         number.cex = 0.8,
+         title = "Correlation Matrix",
+         col = colorRampPalette(c("blue", "white", "red"))(200)
+         )
+
+# Scatterplot Matrix
+pairs(fuel2001,
+      main = "Scatterplot Matrix - All Variables",
+      lower.panel = NULL
+      )
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...){
+  usr <- par("usr")
+  on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y)
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+  text(0.5, 0.5, txt, cex = cex.cor * abs(r) * 2)
+}
+pairs(fuel2001,
+      lower.panel = panel.smooth,
+      upper.panel = panel.cor,
+      main = "Scatterplot Matrix with Correlation")
 
 # • Visualize the relation between response variables and predictor variables.
+
+# FuelC vs Drivers
+ggplot(fuel2001, aes(x = Drivers, y = FuelC)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Drivers",
+       x = "Licensed Drivers",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Income
+ggplot(fuel2001, aes(x = Income, y = FuelC)) +
+  geom_point(color = "darkgreen", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Income",
+       x = "Per Capita Income ($1000s)",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Miles
+ggplot(fuel2001, aes(x = Miles, y = FuelC)) +
+  geom_point(color = "orange", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Highway Miles",
+       x = "Federal-aid Highway Miles",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Pop
+ggplot(fuel2001, aes(x = Pop, y = FuelC)) +
+  geom_point(color = "purple", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Population",
+       x = "Population (16+)",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Tax
+ggplot(fuel2001, aes(x = Tax, y = FuelC)) +
+  geom_point(color = "firebrick", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Gas Tax",
+       x = "Gas Tax Rate (cents/gallon)",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
