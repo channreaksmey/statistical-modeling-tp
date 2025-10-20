@@ -490,3 +490,4 @@ ggplot(fuel2001, aes(x = Tax, y = FuelC)) +
        y = "Fuel Consumption (1000s gallons)") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
