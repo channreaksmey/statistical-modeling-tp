@@ -20,7 +20,13 @@ editor: visual
  # Install and load dataset install.packages("HistData") library(HistData) data(Galton) Galton <- data.frame(Galton)
 ```
 
-### a. Contingency table between children and parents’ height
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+```
+
+### (a). Contingency table between children and parents’ height
 
 ```{r}
 table_Galton <- table(round(Galton$parent, 1), round(Galton$child, 1))
@@ -134,13 +140,13 @@ data(nassCDS)
 
 ## Question 1: Seatbelt Use and Mortality
 
-### (1)
+### (1). How many indiv used seatbelts
 
 ```{r}
 sum(nassCDS$seatbelt == "belted", na.rm=TRUE)
 ```
 
-### (2)
+### (2) table of seatbelt usage vs accident outcome
 
 ```{r}
 table_seat <- table(nassCDS$seatbelt, nassCDS$dead)
@@ -184,9 +190,78 @@ dead  <- nassCDS$ageOFocc[nassCDS$dead=="dead"]
 t.test(alive, dead, var.equal=FALSE)
 ```
 
+### (1) mean and standard deviation
+
+```{r}
+# Load the nassCDS dataset
+data(nassCDS, package = "DAAG")
+
+# Check the structure of the dataset
+str(nassCDS)
+
+# Look at the variables we need
+head(nassCDS[, c("dead", "ageOFocc")])
+```
+
+```{r}
+# mean and standard deviation of age by accident outcome
+age_stats <- nassCDS %>%
+  group_by(dead) %>%
+  summarise(
+    mean_age = mean(ageOFocc, na.rm = TRUE),
+    sd_age = sd(ageOFocc, na.rm = TRUE),
+    n = n()
+  )
+
+print(age_stats)
+```
+
+### (2) Visualize the distribution of the occupants’ age by accident outcome with data points
+
+```{r}
+# Create boxplot with data points
+ggplot(nassCDS, aes(x = dead, y = ageOFocc, fill = dead)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.3, size = 0.8) +
+  labs(title = "Distribution of Occupant Age by Accident Outcome",
+       x = "Accident Outcome",
+       y = "Age of Occupant") +
+  theme_minimal() +
+  scale_fill_manual(values = c("alive" = "lightblue", "dead" = "lightcoral"))
+```
+
+The boxplot shows the distribution of ages for both groups (alive and dead) with individual data points overlaid. This visualization helps compare the central tendency, spread, and potential outliers in age distribution between survivors and fatalities.
+
+### (3) 95% confidence interval for the mean difference of the age of occupant using t distribution.
+
+```{r}
+# Calculate 95% confidence interval for mean age difference using t-distribution
+
+# Extract ages for each group
+age_alive <- nassCDS$ageOFocc[nassCDS$dead == "alive"]
+age_dead <- nassCDS$ageOFocc[nassCDS$dead == "dead"]
+
+# Perform t-test to get confidence interval
+t_test_result <- t.test(age_dead, age_alive, conf.level = 0.95)
+
+# Extract the confidence interval
+ci_lower <- t_test_result$conf.int[1]
+ci_upper <- t_test_result$conf.int[2]
+mean_diff <- t_test_result$estimate[1] - t_test_result$estimate[2]
+
+cat("Mean age difference (dead - alive):", round(mean_diff, 2), "\n")
+cat("95% Confidence Interval: [", round(ci_lower, 2), ",", round(ci_upper, 2), "]\n")
+cat("t-statistic:", round(t_test_result$statistic, 2), "\n")
+cat("p-value:", format.pval(t_test_result$p.value), "\n")
+```
+
+Description:
+
+The 95% confidence interval for the mean difference in age between occupants who died and those who survived is **\[lower bound, upper bound\]**. This means we are 95% confident that the true mean age difference in the population falls within this interval.
+
 ## Question 3: Sex, Age, and Safety Devices
 
-### (1)
+### (1) 
 
 ```{r}
 boxplot(ageOFocc ~ sex, data=nassCDS, main="Occupant Age by Sex", col=c("pink","lightblue"))
@@ -241,6 +316,169 @@ nass_analysis <- function(data){
 nass_analysis(nassCDS)
 ```
 
+### (1) which of the accident outcome is “dead”?
+
+```{r}
+fatal_cases <- nassCDS %>% filter(dead == "dead")
+
+# Check the result
+cat("Total observations in original dataset:", nrow(nassCDS), "\n")
+cat("Fatal cases found:", nrow(fatal_cases), "\n")
+cat("Percentage of fatal cases:", round(nrow(fatal_cases)/nrow(nassCDS)*100, 2), "%\n")
+
+# Preview the fatal cases
+head(fatal_cases)
+```
+
+This task filters the dataset to include only cases where the occupant died
+
+### (2) The percentage of deaths
+
+```{r}
+# 4.2 Calculate percentage of deaths out of the overall number of observations
+total_observations <- nrow(nassCDS)
+fatal_count <- nrow(fatal_cases)
+death_percentage <- (fatal_count / total_observations) * 100
+
+cat("Overall death statistics:\n")
+cat("Total observations:", total_observations, "\n")
+cat("Number of deaths:", fatal_count, "\n")
+cat("Percentage of deaths:", round(death_percentage, 2), "%\n")
+```
+
+### (3) Calculate gender percentages among fatalities
+
+```{r}
+# 4.3 Calculate the percentages of females and males among the occupants who died
+gender_breakdown <- fatal_cases %>%
+  count(sex) %>%
+  mutate(percentage = (n / fatal_count) * 100)
+
+print("Gender distribution among fatalities:")
+print(gender_breakdown)
+
+# Extract specific percentages
+female_pct <- gender_breakdown$percentage[gender_breakdown$sex == "f"]
+male_pct <- gender_breakdown$percentage[gender_breakdown$sex == "m"]
+
+cat("\nDetailed breakdown:\n")
+cat("Female fatalities:", ifelse(length(female_pct) > 0, round(female_pct, 2), 0), "%\n")
+cat("Male fatalities:", ifelse(length(male_pct) > 0, round(male_pct, 2), 0), "%\n")
+```
+
+### (4) Find most frequent injury severity
+
+```{r}
+# 4 Show the most frequent severity of their injuries
+severity_analysis <- fatal_cases %>%
+  count(injSeverity) %>%
+  arrange(desc(n))  # Sort by frequency in descending order
+
+print("Injury severity frequency among fatalities:")
+print(severity_analysis)
+
+most_frequent_severity <- severity_analysis$injSeverity[1]
+most_frequent_count <- severity_analysis$n[1]
+
+cat("\nMost frequent injury severity:", most_frequent_severity, "\n")
+cat("Number of cases with this severity:", most_frequent_count, "\n")
+cat("This represents", round(most_frequent_count/fatal_count*100, 2), "% of all fatalities\n")
+```
+
+This identifies the most common injury severity level among those who died. We count occurrences of each injury severity level and sort them to find the most frequent one. This reveals what injury severity is most associated with fatal outcomes.
+
+### (5) Calculate age range of fatalities
+
+```{r}
+# 4.5 Calculate the minimum and maximum age of the occupant
+min_age <- min(fatal_cases$ageOFocc, na.rm = TRUE)
+max_age <- max(fatal_cases$ageOFocc, na.rm = TRUE)
+
+cat("Age range:", max_age - min_age, "years\n")
+```
+
+### (6) Create injury severity vs age visualization
+
+```{r}
+# histogram with severity of injuries on x-axis and occupant's age on y-axis
+ggplot(fatal_cases, aes(x = factor(injSeverity), y = ageOFocc)) +
+  geom_boxplot(aes(fill = factor(injSeverity)), alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5, size = 1, color = "darkred") +
+  labs(title = "Relationship Between Injury Severity and Occupant Age in Fatal Accidents",
+       subtitle = paste("Analysis of", fatal_count, "fatal cases"),
+       x = "Injury Severity Level",
+       y = "Occupant Age (years)",
+       caption = "Each point represents one fatal case") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "blue")
+```
+
+This creates a visualization showing how age distributes across different injury severity levels.
+
+### (7) Complete SINGLE-for-all function
+
+```{r}
+# 4.7 Complete function that returns both numerical and graphical outputs
+analyze_fatal_accidents <- function(nassCDS) {
+  # 4.1 - Filter fatal cases
+  fatal_cases <- nassCDS %>% filter(dead == "dead")
+  
+  # 4.2 - Calculate death percentage
+  total_obs <- nrow(nassCDS)
+  fatal_count <- nrow(fatal_cases)
+  death_pct <- (fatal_count / total_obs) * 100
+  
+  # 4.3 - Gender percentages
+  gender_pct <- fatal_cases %>%
+    count(sex) %>%
+    mutate(percentage = (n / fatal_count) * 100)
+  
+  # 4.4 - Most frequent injury severity
+  most_severe <- fatal_cases %>%
+    count(injSeverity) %>%
+    arrange(desc(n)) %>%
+    slice(1)
+  
+  # 4.5 - Age range
+  min_age <- min(fatal_cases$ageOFocc, na.rm = TRUE)
+  max_age <- max(fatal_cases$ageOFocc, na.rm = TRUE)
+  
+  # Create numerical output table
+  numerical_output <- data.frame(
+    Metric = c("Death Percentage", "Female Fatalities %", "Male Fatalities %", 
+               "Most Frequent Severity", "Min Age", "Max Age"),
+    Value = c(round(death_pct, 2),
+              round(gender_pct$percentage[gender_pct$sex == "f"], 2),
+              round(gender_pct$percentage[gender_pct$sex == "m"], 2),
+              most_severe$injSeverity,
+              round(min_age, 1),
+              round(max_age, 1))
+  )
+  
+  # 4.6 - Create plot
+  graphical_output <- ggplot(fatal_cases, aes(x = factor(injSeverity), y = ageOFocc)) +
+    geom_boxplot(aes(fill = factor(injSeverity)), alpha = 0.7) +
+    labs(title = "Injury Severity vs Age in Fatal Accidents",
+         x = "Injury Severity", y = "Occupant Age") +
+    theme_minimal() +
+    theme(legend.position = "none")
+  
+  return(list(numerical = numerical_output, plot = graphical_output))
+}
+
+# Execute the complete function
+results <- analyze_fatal_accidents(nassCDS)
+```
+
+```{r}
+print(results$numerical)
+```
+
+```{r}
+print(results$plot)
+```
+
 ## Question 5: Seatbelt Users Summary
 
 ```{r}
@@ -251,6 +489,125 @@ table(seatbelt_users$dead, seatbelt_users$occRole)
 
 seatbelt_users <- seatbelt_users[order(seatbelt_users$injSeverity, seatbelt_users$ageOFocc), ]
 head(seatbelt_users[order(-seatbelt_users$weight), ], 25)
+```
+
+### (1) New df containing only occupants who used seatbel
+
+```{r}
+# Create a new data frame which contains only occupants who used seatbelt
+seatbelt_users <- nassCDS %>% filter(seatbelt == "belted")
+
+# Check the result
+cat("Created new data frame: seatbelt_users\n")
+cat("Dimensions:", dim(seatbelt_users), "(rows × columns)\n")
+cat("First few rows:\n")
+head(seatbelt_users)
+```
+
+### (2) How many occupants used seatbelt ?
+
+```{r}
+total_seatbelt_users <- nrow(seatbelt_users)
+
+cat("Occupants who used seatbelt:", total_seatbelt_users, "\n")
+```
+
+### (3) Survival outcomes among seatbelt users
+
+```{r}
+# Among seatbelt users, how many died and how many survived?
+survival_breakdown <- seatbelt_users %>%
+  count(dead) %>%
+  mutate(percentage = (n / total_seatbelt_users) * 100)
+
+# Calculate fatality rate
+fatalities <- survival_breakdown$n[survival_breakdown$dead == "dead"]
+survivors <- survival_breakdown$n[survival_breakdown$dead == "alive"]
+
+cat(
+  "Seatbelt users who survived:", 
+  survivors,
+  "(", round(survivors/total_seatbelt_users*100, 2), 
+  "%)\n"
+)
+cat(
+  "Seatbelt users who died:", 
+  fatalities, 
+  "(", round(fatalities/total_seatbelt_users*100, 2), 
+  "%)\n"
+)
+```
+
+### (4) Role analysis among seatbelt users
+
+```{r}
+# Analyze drivers vs passengers among different outcomes
+role_analysis <- seatbelt_users %>%
+  group_by(dead, occRole) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  group_by(dead) %>%
+  mutate(percentage = (count / sum(count)) * 100)
+
+cat("Role distribution among seatbelt users by outcome:\n")
+print(role_analysis)
+
+# Specific answers for the question
+drivers_died <- seatbelt_users %>%
+  filter(dead == "dead" & occRole == "driver") %>%
+  nrow()
+
+passengers_survived <- seatbelt_users %>%
+  filter(dead == "alive" & occRole == "passenger") %>%
+  nrow()
+
+cat("\nSpecific counts requested:\n")
+cat("Drivers among seatbelt users who died:", drivers_died, "\n")
+cat("Passengers among seatbelt users who survived:", passengers_survived, "\n")
+
+# Additional insight: compare role distribution
+cat("\nAdditional insight - Role distribution:\n")
+role_summary <- seatbelt_users %>% count(occRole)
+print(role_summary)
+```
+
+### (5) Sort by injury severity and age
+
+```{r}
+# Sort the data frame according to injury severity and occupant age
+seatbelt_sorted <- seatbelt_users %>%
+  arrange(desc(injSeverity), desc(ageOFocc))
+
+cat("Data frame sorted by injury severity (descending) and age (descending)\n")
+cat("First 10 rows of sorted data:\n")
+print(seatbelt_sorted[1:10, c("injSeverity", "ageOFocc", "dead", "occRole", "weight")])
+
+# Alternative: ascending order for age
+seatbelt_sorted_alt <- seatbelt_users %>%
+  arrange(desc(injSeverity), ageOFocc)
+
+cat("\nAlternative: Sorted by injury severity (desc) and age (asc)\n")
+cat("First 10 rows:\n")
+print(seatbelt_sorted_alt[1:10, c("injSeverity", "ageOFocc", "dead", "occRole", "weight")])
+
+# Show range of injury severity
+cat("\nInjury severity range in seatbelt users:\n")
+cat("Min severity:", min(seatbelt_users$injSeverity, na.rm = TRUE), "\n")
+cat("Max severity:", max(seatbelt_users$injSeverity, na.rm = TRUE), "\n")
+cat("Mean severity:", round(mean(seatbelt_users$injSeverity, na.rm = TRUE), 2), "\n")
+```
+
+This sorts the seatbelt users dataframe first by injury severity (most severe first) and then by age (oldest first within each severity level)
+
+### (6) Top 25 occupants by weight
+
+```{r}
+# Print the 25 occupants with the highest weight
+top_25_weight <- seatbelt_users %>%
+  arrange(desc(weight)) %>%
+  head(25)
+
+cat("25 seatbelt users with highest weight:\n")
+print(top_25_weight[, c("weight", "ageOFocc", "dead", "injSeverity", "occRole", "sex")])
 ```
 
 ## Question 6: Age, Seatbelt, and Airbag Relationship
