@@ -6,14 +6,12 @@ This repository contains **TP** files, exercises, and corresponding solutions fo
 
 Course: Statistical Modeling
 
-Instructor: Mr. PHOK PONNA
+Instructor: **Mr. PHOK PONNA**
 
 Department: Applied Mathematics and Statistics
 
 ## Made with ❤️ by
 
-**SOM Chann Reaksmey** 
-
-**Ny Chantharith**
-
-**NGEN Tina**
+* **SOM Chann Reaksmey** 
+* **Ny Chantharith**
+* **NGEN Tina**
