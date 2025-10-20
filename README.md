@@ -10,8 +10,10 @@ Instructor: Mr. PHOK PONNA
 
 Department: Applied Mathematics and Statistics
 
-## Author
+## Made with ❤️ by
 
 **SOM Chann Reaksmey** 
 
-channreaksmey2603@gmail.com
+**Ny Chantharith**
+
+**NGEN Tina**
