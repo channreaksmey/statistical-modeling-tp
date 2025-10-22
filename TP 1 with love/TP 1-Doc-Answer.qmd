@@ -7,7 +7,8 @@ editor: visual
 ---
 title: "Statistical Models Exercise Answers"
 subtitle: "Institute of Technology of Cambodia — I4STM"
-author: "Student Name"
+author: "SOM Chann Reaksmey, NGEN Tina, NY Chantharith, TIENG Sopanha, YENG Kheang"
+description: "WRITING THIS TP WITH LOVE NOT FAKE LIKE CHHAYTHEAN"
 format: html
 editor: visual
 ---
