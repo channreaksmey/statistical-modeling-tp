@@ -1,0 +1,103 @@
+# Git ignore for R and Python projects
+# Place this file at the repository root
+
+# -----------------------
+# OS / editor
+# -----------------------
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+
+# -----------------------
+# R
+# -----------------------
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+.Rproj
+.Renviron          # contains secrets/env vars
+.Renviron.local
+.Rprofile
+.Rbuildignore
+
+# R package managers / caches
+renv/library/
+renv/cache/
+packrat/lib/
+packrat/cache/
+.packages
+.packages.lock
+
+# R Markdown / knitr cache and figures
+*_cache/
+*/_cache/
+*.utf8.md
+*.knit.md
+*.cache
+figure/
+
+# compiled/shared objects from R packages
+*.dll
+*.so
+*.o
+
+# -----------------------
+# Python
+# -----------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+.venv.bak/
+
+# pip / packaging
+pip-wheel-metadata/
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# IDEs
+.ipynb_checkpoints
+.ipynb
+mypy_cache/
+.pyre/
+
+# dotenv / secrets
+.env
+.env.*            # e.g. .env.local
+
+# Misc logs and runtime
+*.log
+*.sqlite
+*.db
+
+# Backup files
+*.bak
+*.orig
+
+# optional: large data artifacts (uncomment if you want to ignore data outputs)
+# data/
+# outputs/
+# results/
