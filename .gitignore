@@ -101,3 +101,7 @@ mypy_cache/
 # data/
 # outputs/
 # results/
+# OS / env / package ignores
+.DS_Store
+package.json
+.env

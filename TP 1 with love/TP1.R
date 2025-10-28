@@ -491,3 +491,279 @@ ggplot(fuel2001, aes(x = Tax, y = FuelC)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
+# Section 2: the nassCDS data
+# In this section of the exam, we focus on the nassCDS data which is a US data from police-reported car
+# crashes (1997-2002) in which there is a harmful event (people or property).
+
+# Load and inspect dataset
+# install.packages("DAAG")
+library("DAAG")
+data(nassCDS)
+names(nassCDS)
+head(nassCDS)
+str(nassCDS)
+
+# Question 1
+# In this question we focus on the accident’s outcome (the variable dead) and seatbelt usage (the variable seatbelt).
+# 1. How many individuals used seatbelt?
+seatbelt_counts <- table(nassCDS$seatbelt)
+print(seatbelt_counts)
+
+# 2. What is the distribution of seatbelt usage across the accident’s outcome factor ? 
+# Produce a 2X2 table that shows the number of seatbelt users (belted/none) and accident’s outcome (alive/dead)?
+contigency_table <- table(nassCDS$seatbelt, nassCDS$dead)
+print(contigency_table)
+
+# 3. Write a function that can be used to conduct inference for proportions in two independent populations.
+# The null hypothesis is that there is no difference between the proportions in the two populations. Test
+# the null hypothesis against a two sided alternative. The input of the function should be the 2X2 table
+# in the previous item (Question 1.2) and the output should be the test statistic and the p value. Apply
+# your function to test the null hypothesis that the proportion of deaths among individuals who used
+# seatbelt is equal to the proportion of deaths among the individuals who did not use seatbelt.
+
+# H_0: p_belted = p_none (proportions of deaths are equal)
+# H_a: p_belted != p_none(proprotions of deaths are different)
+two_proportion_test <- function(contigency_table){
+  # Check if table has correct dimensions
+  if(!all(dim(contigency_table) == c(2, 2))){
+    stop("Input must be a 2x2 table")
+  }
+  
+  # Extract counts
+  n1_dead <- contigency_table[1, 2] # belted & dead
+  n1_total <- sum(contigency_table[1, ]) # total belted
+  
+  n2_dead <- contigency_table[2, 2] # none & dead
+  n2_total <- sum(contigency_table[2, ]) # total none
+  
+  # Calculate sample proportions
+  p1 <- n1_dead / n1_total # Proportion of deaths among belted
+  p2 <- n2_dead / n2_total # Proportion of deaths among none
+  
+  # Calculate pooled proportion under H_0
+  p_pooled <- (n1_dead+n2_dead)/(n1_total+n2_total)
+  
+  # Calculate standard error under H_0
+  se <- sqrt(p_pooled*(1-p_pooled)*(1/n1_total+1/n2_total))
+  
+  # Calculate z-test statistic
+  z_stat <- (p1 - p2)/se
+  
+  # Calculate two-sided p-value
+  p_value <- 2*pnorm(-abs(z_stat))
+  
+  result <- list(
+    test_statistic = z_stat,
+    p_value = p_value,
+    proportion_belted = p1,
+    proportion_none = p2,
+    pooled_proportion = p_pooled,
+    sample_size_belted = n1_total,
+    sample_size_none = n2_total
+  )
+  
+  return(result)
+}
+
+test_result <-two_proportion_test(contigency_table)
+test_result
+
+if (test_result$p_value<0.05) {
+  cat("Conclusion: Reject H_0 at alpha = 0.05 level.\n")
+  cat("There is significant evidence that the proportion of deaths differs between those who used seatbelts and those who did not.\n")
+} else {
+  cat("Conclusion: Fail to Reject H_0 at alpha = 0.05 level.\n")
+  cat("There is insufficient evidence to conclude that the proportions differ.\n")
+}
+
+# 4. Use a barplot to visualize the distribution of the seatbelt usage across the factor levels of the accident’s outcome.
+barplot(contigency_table,
+        beside = TRUE,
+        main = "Seatbelt Usage by Outcome",
+        xlab = "Accident Outcome",
+        ylab = "Frequency",
+        col = c("lightblue", "pink"),
+        legend.text = TRUE,
+        args.legend = list(title = "Seatbelt", x = "topright")
+        )
+
+
+# Question 2
+# In this question we focus on the outcome of the accident (dead/alive, the variable dead) and the age of the occupant (the variable ageOFocc).
+# 1. What is the mean and standard deviation of the age of occupant by accident outcome?
+mean_age <- tapply(nassCDS$ageOFocc, nassCDS$dead, mean, na.rm=TRUE)
+sd_age <- tapply(nassCDS$ageOFocc, nassCDS$dead, sd, na.rm=TRUE)
+n_age <- tapply(nassCDS$ageOFocc, nassCDS$dead, function(x) sum(!is.na(x)))
+
+summary_table <- data.frame(
+  Outcome = names(mean_age),
+  Mean = round(mean_age, 2),
+  SD = round(sd_age, 2),
+  N = n_age
+)
+summary_table
+
+# 2. Use a boxplot to visualize the distribution of the occupants’ age by accident outcome and add the data points on the boxplot.
+boxplot(ageOFocc ~ dead,
+        data = nassCDS,
+        main = "Distribution of Occupant Age by Accident Outcome",
+        xlab = "Accident Outcome",
+        ylab = "Age pf Occupant (years)",
+        col = c("lightblue", "pink"),
+        notch = FALSE,
+        outline = TRUE
+        )
+
+# Add data point with jitter
+set.seed(123) # For reproducibility of jitter
+stripchart(ageOFocc ~ dead,
+           data = nassCDS,
+           vertical = TRUE,
+           method = "jitter",
+           add = TRUE,
+           pch = 16,
+           col = rgb(0, 0, 0, 0.2),
+           cex = 0.6,
+           jitter = 0.2
+           ) 
+
+# Add mean points
+points(1:2, mean_age, pch = 18, col = "blue", cex = 2)
+
+legend("topright",
+       legend = c("Median", "Mean", "Data points"),
+       pch = c(NA, 18, 16),
+       lty = c(1, NA, NA),
+       lwd = c(2, NA, NA),
+       col = c("black", "blue", rgb(0, 0, 0, 0.2)),
+       cex = 0.8
+       )
+
+# Add grid
+grid(nx=NA, ny=NULL, col="gray", lty="dotted")
+
+# 3. Calculate a 95% confidence interval for the mean difference of the age of occupant using t distribution.
+# Extract age data for each group
+age_alive <- nassCDS$ageOFocc[nassCDS$dead == "alive"]
+age_dead <- nassCDS$ageOFocc[nassCDS$dead == "dead"]
+
+# Remove NA values
+age_alive <- age_alive[!is.na(age_alive)]
+age_dead <- age_dead[!is.na(age_dead)]
+
+# Calculate sample statistics
+n1 <- length(age_alive)
+n2 <- length(age_dead)
+mean1 <- mean(age_alive)
+mean2 <- mean(age_dead)
+sd1 <- sd(age_alive)
+sd2 <- sd(age_dead)
+var1 <- var(age_alive)
+var2 <- var(age_dead)
+
+# Mean difference (Dead - Alive)
+mean_diff <- mean2 - mean1
+
+"Group Statistics: \n"
+cat("Alive: n =", n1, ", mean =", round(mean1, 2), ", sd = ", round(sd1, 2))
+cat("Dead: n =", n2, ", mean =", round(mean2, 2), ", sd = ", round(sd2, 2))
+
+# Calculate pooled standard deviation and standard error
+# Using Welch's approach (unequal variances)
+se_diff <- sqrt(var1/n1+var2/n2)
+
+# Degree of freedom using Welch-Statterthwaite equation
+df <- (var1/n1+var2/n2)^2/((var1/n1)^2/(n1-1)+(var2/n2)^2/(n2-1))
+
+# Calculate 95% CI using Welch's t-test approach
+t_critical <- qt(0.975, df = df)
+ci_lower <- mean_diff - t_critical * se_diff
+ci_upper <- mean_diff + t_critical * se_diff
+
+"Welch's t-test (unequal variances assumed)\n"
+cat("Degrees of freedom:", round(df, 2))
+cat("Standard error:", round(se_diff, 4))
+cat("t-critical value:", round(t_critical, 4))
+cat("95% CI: [", round(ci_lower, 2), ",", round(ci_upper, 2), "]")
+
+# Interpretation
+cat("The 95% CI for the mean age difference (Dead - Alive) using Welch's method is [", round(ci_lower, 2), ",", round(ci_upper, 2), "] years old")
+if (ci_lower > 0 && ci_upper > 0){
+  cat("Since the entire CI is positive, occupants who died were significantly older than those who survived.")
+} else if (ci_lower < 0 && ci_upper > 0){
+  cat("Since the entire CI is negative, occupants who died were significantly younger on average than those who survived.")
+} else {
+  cat("Since CI includes zero, there is no significant difference in mean age between those who died and those who survived at the 95% confidence level.")
+}
+
+
+# Question 3
+# 1. Visualize the distribution of the occupant age by sex.
+
+
+
+
+# 2. How many occupants over the age of 50 years old survived the accident?
+
+# 3. Add a binary variable AgeOFocc_class that takes the value of 1 when 
+# the occupant age is over 50 years and 0 for when the occupant age is 50 years or less.
+
+# 4. Create a data frame, nassCDS_o50, containing occupants older than 50 years old. This data frame
+# should contain the variables dead, airbag, weight, and injSeverity. Remove the observations with missing values.
+
+# 5. What is the dimension of the new data ?
+
+# 6. Among the occupants who are older than 50 years old, use a barplot to visualize the distribution of
+# airbag across the levels of the accident outcome (dead/alive). The variable dead should be on the x-axis.
+
+# 7. Among the occupants who are older than 50 years old visualize the distribution of 
+# airbag across the level of injury sevirity (the variable injSeverity).
+
+
+# Question 4
+# Write a R function that receives as an input the nassCDS dataset. The function should conduct the following analysis:
+# 1. Select only the observations for which the accident outcome is “dead”.
+
+# 2. Calculate percentage of deaths out of the overall number of observations.
+
+# 3. Calculate the percentages of females and males among the occupants who died in the accident.
+
+# 4. Show the most frequent severity of their injuries.
+
+# 5. Calculate the minimum and maximum age of the occupant (the variable ageOFocc).
+
+# 6. produce a histogram with the severity of injuries on the x axis and the occupant’s age on the y axis
+
+# 7. This SINGLE Function should return two outputs:
+#   • Numerical output: 4.2,4.3,4.4 and 4.5 as a table.
+#   • Graphical output: 4.6 as a plot.
+
+
+# Question 5
+# 1. Create a new data frame which contains only occupants who used seatbelt.
+
+# 2. How many occupants used seatbelt ?
+
+# 3. Among the individuals who used seatbelt, how many died and how many survived the accident ?
+
+# 4. Among the individuals who used seatbelt, how many were drivers among 
+# the individuals who died and how many were passengers among the individuals 
+# who survived the accident (use the variable occRole to identify drivers/passengers) ?
+
+# 5. Sort the data frame according to the injury’s severity and the occupant age.
+
+# 6. Print the 25 occupants with the highest weight.
+
+
+# Question 6
+# 1. Produce the figure below.
+
+
+
+
+
+
+
+
+
+
