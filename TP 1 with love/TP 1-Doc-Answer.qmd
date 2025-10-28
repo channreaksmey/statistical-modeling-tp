@@ -261,7 +261,7 @@ The 95% confidence interval for the mean difference in age between occupants who
 
 ## Question 3: Sex, Age, and Safety Devices
 
-### (1) 
+### (1)
 
 ```{r}
 boxplot(ageOFocc ~ sex, data=nassCDS, main="Occupant Age by Sex", col=c("pink","lightblue"))
