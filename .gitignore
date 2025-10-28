@@ -100,4 +100,4 @@ mypy_cache/
 # optional: large data artifacts (uncomment if you want to ignore data outputs)
 # data/
 # outputs/
-# results/
+# results/.DS_Store
