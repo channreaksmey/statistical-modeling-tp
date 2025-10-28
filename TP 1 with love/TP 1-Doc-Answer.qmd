@@ -7,7 +7,8 @@ editor: visual
 ---
 title: "Statistical Models Exercise Answers"
 subtitle: "Institute of Technology of Cambodia — I4STM"
-author: "Student Name"
+author: "SOM Chann Reaksmey, NGEN Tina, NY Chantharith, TIENG Sopanha, YENG Kheang"
+description: "WRITING THIS TP WITH LOVE NOT FAKE LIKE CHHAYTHEAN"
 format: html
 editor: visual
 ---
@@ -17,7 +18,9 @@ editor: visual
 ## Task 1: Galton Heredity
 
 ```{r}
- # Install and load dataset install.packages("HistData") library(HistData) data(Galton) Galton <- data.frame(Galton)
+library(HistData)
+data(Galton)
+Galton <- data.frame(Galton)
 ```
 
 ```{r}
@@ -29,45 +32,112 @@ library(dplyr)
 ### (a). Contingency table between children and parents’ height
 
 ```{r}
-table_Galton <- table(round(Galton$parent, 1), round(Galton$child, 1))
-table_Galton
+head(Galton)
+str(Galton)
+summary(Galton)
+```
+
+```{r}
+child_breaks <- seq(60, 75, by = 0.5)
+parent_breaks <- seq(63, 72, by = 0.5)
+```
+
+```{r}
+child_midpoints <- (child_breaks[-length(child_breaks)] + child_breaks[-1]) / 2
+parent_midpoints <- (parent_breaks[-length(parent_breaks)] + parent_breaks[-1]) / 2
+
+Galton$child_group <- cut(Galton$child, breaks = child_breaks, labels = round(child_midpoints, 2))
+Galton$parent_group <- cut(Galton$parent, breaks = parent_breaks, labels = round(parent_midpoints, 2))
+# Create contigency table
+table <- table(Galton$parent_group, Galton$child_group)
+table
 ```
 
 ### (b) Scatter plot with regression line
 
 ```{r}
+# Fit linear regression model
+model <- lm(child ~ parent, data = Galton)
+
+# Get regression coefficients
+slope <- coef(model)[2]
+intercept <- coef(model)[1]
+```
+
+```{r}
+# Create scatter plot with regression line
 plot(Galton$parent, Galton$child,
-main = "Scatter plot of Children Height vs Parents Average Height",
-xlab = "Average Height of Parents (inch)",
-ylab = "Height of Children (inch)",
-pch = 19, col = "skyblue")
-abline(lm(child ~ parent, data = Galton), col = "red", lwd = 2)
+     main = "Height of Children VS. Average Height of Parents",
+     xlab = "Average Parent Height (inches)",
+     ylab = "Child Height (inches)",
+     pch = 16,
+     col = rgb(0, 0, 0, 0.5), # Semi-transparent black points
+     cex = 0.8
+     )
+
+# Add regression line
+abline(model, col = "red", lwd = 2)
+
+# Add equation and R-squared to the plot
+r_squared <- summary(model)$r.squared
+equation <- paste("y =", round(intercept, 3), "+", round(slope, 3), "* x")
+r2_text <- paste("R^2 =", round(r_squared, 4))
+
+legend ("topleft", legend = c(equation, r2_text),
+        col = c("red", "black"), lty = c(1, NA),
+        bty = "n", cex = 0.9
+        )
+```
+
+```{r}
+# Print model summary
+"=== Regression Summary ===\n"
+summary(model)
+
+"\n=== Key Statistics ===\n"
+cat("Number of observations: ", nrow(Galton), "\n")
+cat("Slope: ", round(slope, 4), "\n")
+cat("Intercept: ", round(intercept, 4), "\n")
+cat("R-squared: ", round(r_squared, 4), "\n")
+cat("Correlation: ", round(cor(Galton$parent, Galton$child), 4), "\n")
 ```
 
 ## Task 2: Munich Rent Index (1999)
 
 ```{r}
-install.packages("gamlss.data")
+#install.packages("gamlss.data") #for the first time you need to install the package
 library(gamlss.data)
-library(dplyr)
 data(rent99)
-rent99 <- data.frame(rent99)
+rent99<-data.frame(rent99)
+head(rent99)
+```
+
+```{r}
+# Structure of the data
+library(dplyr)
+glimpse(rent99)
 ```
 
 ### (a) Histograms and Kernel Density Plots
 
 ```{r}
+# Load and inspect dataset
+head(rent99)
+summary(rent99)
+```
+
+```{r}
 par(mfrow=c(2,2))
-hist(rent99$rent, prob=TRUE, main="Net Rent", xlab="Net rent (€)", col="lightblue")
+hist(rent99$rent, breaks = 30, freq = FALSE, prob=TRUE, main="Net Rent", xlab="Net rent (€)", col="lightblue")
 lines(density(rent99$rent), col="red", lwd=2)
 
-hist(rent99$rentsqm, prob=TRUE, main="Net Rent per sqm", xlab="€", col="lightgreen")
+hist(rent99$rentsqm, breaks = 30, freq = FALSE, prob=TRUE, main="Net Rent per sqm", xlab="€", col="lightgreen")
 lines(density(rent99$rentsqm), col="red", lwd=2)
 
-hist(rent99$area, prob=TRUE, main="Area (sqm)", xlab="sqm", col="lightyellow")
+hist(rent99$area, breaks = 30, freq = FALSE, prob=TRUE, main="Area (sqm)", xlab="sqm", col="lightyellow")
 lines(density(rent99$area), col="red", lwd=2)
 
-hist(rent99$yearc, prob=TRUE, main="Year of Construction", xlab="Year", col="lightgray")
+hist(rent99$yearc, breaks = 30, freq = FALSE, prob=TRUE, main="Year of Construction", xlab="Year", col="darkblue")
 lines(density(rent99$yearc), col="red", lwd=2)
 
 ```
@@ -76,43 +146,115 @@ lines(density(rent99$yearc), col="red", lwd=2)
 
 ```{r}
 par(mfrow=c(2,2))
-plot(rent99$area, rent99$rent, main="Net Rent vs Area", xlab="Area (sqm)", ylab="Net Rent (€)", pch=19, col="blue")
-plot(rent99$area, rent99$rentsqm, main="Rent per sqm vs Area", xlab="Area (sqm)", ylab="Rent/sqm (€)", pch=19, col="darkgreen")
-plot(rent99$yearc, rent99$rent, main="Net Rent vs Year", xlab="Year", ylab="Net Rent (€)", pch=19, col="purple")
-plot(rent99$yearc, rent99$rentsqm, main="Rent per sqm vs Year", xlab="Year", ylab="Rent/sqm (€)", pch=19, col="orange")
+plot(rent99$area, rent99$rent, main="Net Rent vs Area", xlab="Area (sqm)", ylab="Net Rent (€)", col="blue")
+plot(rent99$area, rent99$rentsqm, main="Rent per sqm vs Area", xlab="Area (sqm)", ylab="Rent/sqm (€)", col="darkgreen")
+plot(rent99$yearc, rent99$rent, main="Net Rent vs Year", xlab="Year", ylab="Net Rent (€)", col="purple")
+plot(rent99$yearc, rent99$rentsqm, main="Rent per sqm vs Year", xlab="Year", ylab="Rent/sqm (€)", col="orange")
 ```
 
 ### (c) Average and SD Plot
 
 ```{r}
-rent_summary <- rent99 %>%
-group_by(area) %>%
-summarise(avg_rent = mean(rent), sd_rent = sd(rent),
-avg_rentsqm = mean(rentsqm), sd_rentsqm = sd(rentsqm))
+library(ggplot2)
+# Compute average values per cluster
+rent_area <- rent99 %>%
+  group_by(area) %>%
+  summarise(
+    mean_rent = mean(rent, na.rm = TRUE),
+    sd_rent = sd(rent, na.rm = TRUE),
+    mean_rentsqm = mean(rentsqm, na.rm = TRUE),
+    sd_rentsqm = sd(rentsqm, na.rm = TRUE)
+  )
+rent_yearc <- rent99 %>%
+  group_by(yearc) %>%
+  summarise(
+    mean_rent = mean(rent, na.rm = TRUE),
+    sd_rent = sd(rent, na.rm = TRUE),
+    mean_rentsqm = mean(rentsqm, na.rm = TRUE),
+    sd_rentsqm = sd(rentsqm, na.rm = TRUE)
+  )
+```
 
-plot(rent_summary$area, rent_summary$avg_rent, type="l",
-main="Average Net Rent vs Area", xlab="Area", ylab="Average Rent")
-lines(rent_summary$area, rent_summary$avg_rent + rent_summary$sd_rent, lty=2)
-lines(rent_summary$area, rent_summary$avg_rent - rent_summary$sd_rent, lty=2)
+```{r}
+ggplot(rent_area, aes(x = area, y = mean_rent)) +
+  geom_point(shape = 21, fill = "black", size = 2) +
+  geom_errorbar(aes(ymin = mean_rent - sd_rent, ymax = mean_rent + sd_rent),
+                width = 0.5, color = "red") +
+  labs(title = "Average net rent vs. area",
+       x = "area in sqm", y = "average net rent") +
+  theme_bw()
+
+ggplot(rent_area, aes(x = area, y = mean_rentsqm)) +
+  geom_point(shape = 21, fill = "black", size = 2) +
+  geom_errorbar(aes(ymin = mean_rentsqm - sd_rentsqm, ymax = mean_rentsqm + sd_rentsqm),
+                width = 0.5, color = "red") +
+  labs(title = "Average net rent per sqm vs. area",
+       x = "area in sqm", y = "average net rent per sqm") +
+  theme_bw()
+
+ggplot(rent_yearc, aes(x = yearc, y = mean_rent)) +
+  geom_point(shape = 21, fill = "black", size = 2) +
+  geom_errorbar(aes(ymin = mean_rent - sd_rent, ymax = mean_rent + sd_rent),
+                width = 0.5, color = "red") +
+  labs(title = "Average net rent vs. year of construction",
+       x = "year of construction", y = "average net rent") +
+  theme_bw()
+
+ggplot(rent_yearc, aes(x = yearc, y = mean_rentsqm)) +
+  geom_point(shape = 21, fill = "black", size = 2) +
+  geom_errorbar(aes(ymin = mean_rentsqm - sd_rentsqm, ymax = mean_rentsqm + sd_rentsqm),
+                width = 0.5, color = "red") +
+  labs(title = "Average net rent per sqm vs. year of construction",
+       x = "year of construction", y = "average net rent per sqm") +
+  theme_bw()
 ```
 
 ### (d) Boxplot and Density by Location
 
 ```{r}
-boxplot(rentsqm ~ location, data=rent99,
-main="Net Rent per sqm by Location",
-xlab="Location", ylab="Rent per sqm (€)", col=c("skyblue","lightgreen","lightpink"))
+plot(rent99$location, rent99$rentsqm,
+     xlab = "location", ylab = "net rent per sqm")
 
-plot(density(rent99$rentsqm), main="Kernel Density: Net Rent per sqm", col="red", lwd=2)
+# smooth density estimator
+# label location categories
+rent99$Location <- factor(rent99$location, 
+                          levels = c(1, 2, 3), 
+                          labels = c("average", "good", "top"))
+```
+
+```{r}
+net_rent_average <- rent99$rentsqm[rent99$Location == "average"]
+net_rent_good <- rent99$rentsqm[rent99$Location == "good"]
+net_rent_top <- rent99$rentsqm[rent99$Location == "top"]
+
+
+plot(density(net_rent_average), 
+     main = "",
+     xlab = "net rent per sqm",
+     ylab = "estimated density",
+     xlim = c(0, 18),
+     ylim = c(0, 0.16),
+     lwd = 2,
+     col = "black",
+     lty = 1)
+lines(density(net_rent_good), lwd = 2, col = "blue", lty =2)
+lines(density(net_rent_top), lwd = 2, col = "red", lty =3 )
+legend("topright", 
+       legend = c("average", "good", "top"),
+       lty = c(1, 2, 3),
+       col = c("black", "blue", "red"),
+       lwd = 2,
+       bty = "n")
 ```
 
 ## Task 3: Fuel Consumption
 
 ```{r}
-install.packages("alr4")
+#install.packages("alr4") #for the first time you need to install the package
 library(alr4)
 data(fuel2001)
-fuel2001 <- data.frame(fuel2001)
+fuel2001<-data.frame(fuel2001)
+head(fuel2001)
 ```
 
 ### (a) Create new variables
@@ -123,17 +265,220 @@ fuel2001$Dlic <- 1000 * fuel2001$Drivers / fuel2001$Pop
 fuel2001$logMiles <- log(fuel2001$Miles)
 ```
 
+```{r}
+summary(fuel2001)
+head(fuel2001)
+```
+
 ### (b) Summary and Correlation Plot
 
 ```{r}
-summary(fuel2001)
-pairs(fuel2001[, c("Fuel", "Dlic", "Income", "logMiles", "Tax")], main="Correlation Plot")
+y <- fuel2001$FuelC
+# Examine the response variable
+summary(fuel2001$FuelC)
+# Visualize distribution of fuel comsumption across all states
+hist(fuel2001$FuelC,
+     main = "Distribution of Fuel Comsumption Across All States",
+     xlab = "Fuel Comsumption (thousands of gallons)",
+     col = "lightblue",
+     breaks = 15
+     )
+```
+
+```{r}
+install.packages("psych")
+library(psych)
+describe(fuel2001)
+
+# Drivers
+hist(fuel2001$Drivers,
+     main = "Distribution of Licensed Drivers",
+     xlab = "Number of Drivers",
+     col = "lightblue",
+     breaks = 20
+     )
+boxplot(fuel2001$Drivers,
+        main = "Boxplot: Licensed Drivers",
+        ylab = "Number of Drivers",
+        col = "lightblue",
+        horizontal = FALSE
+        )
+# FuelC
+hist(fuel2001$FuelC,
+     main = "Distribution of Fuel Consumption",
+     xlab = "gas sold",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$FuelC,
+        main = "Boxplot: Fuel Consumption",
+        ylab = "gas sold",
+        col = "lightblue"
+        )
+# Income
+hist(fuel2001$Income,
+     main = "Distribution of Income",
+     xlab = "Income per person",
+     col = "lightblue",
+     breaks = 20
+    )
+boxplot(fuel2001$Income,
+        main = "Boxplot: Income",
+        ylab = "Income per person",
+        col = "lightblue",
+        horizontal = FALSE
+        )
+# Miles
+hist(fuel2001$Miles,
+     main = "Distribution of Miles",
+     xlab = "Miles of Federal-aid Highway",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$Income,
+        main = "Boxplot: Miles",
+        ylab = "Miles of Federal-aid Highway",
+        col = "lightblue",
+        horizontal = FALSE
+)
+
+# Pop
+hist(fuel2001$Pop,
+     main = "Distribution of Population",
+     xlab = "Population of age 16 and over",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$Pop,
+        main = "Boxplot: Population",
+        ylab = "Population of age 16 and over",
+        col = "lightblue",
+        horizontal = FALSE
+)
+# Tax
+hist(fuel2001$Tax,
+     main = "Distribution of Tax",
+     xlab = "Tax rate for gasoline",
+     col = "lightblue",
+     breaks = 20
+)
+boxplot(fuel2001$Income,
+        main = "Boxplot: Tax",
+        ylab = "Tax rate for gasoline",
+        col = "lightblue",
+        horizontal = FALSE
+)
+```
+
+```{r}
+# Install and load necessary packages
+#install.packages(c("corrplot", "PerformanceAnalytics", "GGally"))
+library(corrplot)
+library(PerformanceAnalytics)
+library(GGally)
+library(ggplot2)
+
+# Correlation Matrix
+cor_matrix <- cor(fuel2001)
+round(cor_matrix, 3)
+
+# Correlation Plot
+corrplot(
+  cor_matrix,
+  method = "color",
+  type = "upper",
+  order = "hclust",
+  tl.col = "black",
+  tl.srt = 45,
+  addCoef.col = "black",
+  number.cex = 0.8,
+  title = "Correlation Matrix",
+  col = colorRampPalette(c("blue", "white", "red"))(200)
+)
+
+# Scatterplot Matrix
+pairs(fuel2001,
+      main = "Scatterplot Matrix - All Variables",
+      lower.panel = NULL
+)
+
+# Custom correlation panel (fixed)
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...) {
+  usr <- par("usr")           # save current coordinates
+  on.exit(par(usr = usr))     # restore them after the function
+  par(usr = c(0, 1, 0, 1))    # set up new normalized coordinates
+  r <- cor(x, y)
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if (missing(cex.cor)) cex.cor <- 0.8 / strwidth(txt)
+  text(0.5, 0.5, txt, cex = cex.cor * abs(r) * 2)
+}
+
+# Scatterplot Matrix with Correlations
+pairs(fuel2001,
+      lower.panel = panel.smooth,
+      upper.panel = panel.cor,
+      main = "Scatterplot Matrix with Correlation"
+)
+
+```
+
+```{r}
+# FuelC vs Drivers
+ggplot(fuel2001, aes(x = Drivers, y = FuelC)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Drivers",
+       x = "Licensed Drivers",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Income
+ggplot(fuel2001, aes(x = Income, y = FuelC)) +
+  geom_point(color = "darkgreen", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Income",
+       x = "Per Capita Income ($1000s)",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Miles
+ggplot(fuel2001, aes(x = Miles, y = FuelC)) +
+  geom_point(color = "orange", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Highway Miles",
+       x = "Federal-aid Highway Miles",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Pop
+ggplot(fuel2001, aes(x = Pop, y = FuelC)) +
+  geom_point(color = "purple", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Population",
+       x = "Population (16+)",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+# FuelC vs Tax
+ggplot(fuel2001, aes(x = Tax, y = FuelC)) +
+  geom_point(color = "firebrick", size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", fill = "pink", alpha = 0.2) +
+  labs(title = "Fuel Consumption vs Gas Tax",
+       x = "Gas Tax Rate (cents/gallon)",
+       y = "Fuel Consumption (1000s gallons)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 ```
 
 # SECTION 2: nassCDS DATA ANALYSIS
 
 ```{r}
-install.packages("DAAG")
+# install.packages("DAAG")
 library(DAAG)
 data(nassCDS)
 ```
@@ -316,7 +661,7 @@ nass_analysis <- function(data){
 nass_analysis(nassCDS)
 ```
 
-### (1) which of the accident outcome is “dead”?
+### (4.1) which of the accident outcome is “dead”?
 
 ```{r}
 fatal_cases <- nassCDS %>% filter(dead == "dead")
@@ -330,9 +675,7 @@ cat("Percentage of fatal cases:", round(nrow(fatal_cases)/nrow(nassCDS)*100, 2),
 head(fatal_cases)
 ```
 
-This task filters the dataset to include only cases where the occupant died
-
-### (2) The percentage of deaths
+### (4.2) The percentage of deaths
 
 ```{r}
 # 4.2 Calculate percentage of deaths out of the overall number of observations
@@ -346,7 +689,7 @@ cat("Number of deaths:", fatal_count, "\n")
 cat("Percentage of deaths:", round(death_percentage, 2), "%\n")
 ```
 
-### (3) Calculate gender percentages among fatalities
+### (4.3) Calculate the percentages of females and males among the occupants who died in the accident
 
 ```{r}
 # 4.3 Calculate the percentages of females and males among the occupants who died
@@ -366,7 +709,7 @@ cat("Female fatalities:", ifelse(length(female_pct) > 0, round(female_pct, 2), 0
 cat("Male fatalities:", ifelse(length(male_pct) > 0, round(male_pct, 2), 0), "%\n")
 ```
 
-### (4) Find most frequent injury severity
+### (4.4) Find most frequent injury severity
 
 ```{r}
 # 4 Show the most frequent severity of their injuries
@@ -387,17 +730,19 @@ cat("This represents", round(most_frequent_count/fatal_count*100, 2), "% of all 
 
 This identifies the most common injury severity level among those who died. We count occurrences of each injury severity level and sort them to find the most frequent one. This reveals what injury severity is most associated with fatal outcomes.
 
-### (5) Calculate age range of fatalities
+### (4.5) Calculate the minimum and maximum age of the occupant (the variable ageOFocc).
 
 ```{r}
 # 4.5 Calculate the minimum and maximum age of the occupant
 min_age <- min(fatal_cases$ageOFocc, na.rm = TRUE)
 max_age <- max(fatal_cases$ageOFocc, na.rm = TRUE)
 
+cat("Min age:", min_age, "years\n")
+cat("Max age:", max_age, "years\n")
 cat("Age range:", max_age - min_age, "years\n")
 ```
 
-### (6) Create injury severity vs age visualization
+### (4.6) Produce a histogram with the severity of injuries on the x axis and the occupant’s age on the y axis
 
 ```{r}
 # histogram with severity of injuries on x-axis and occupant's age on y-axis
@@ -414,33 +759,31 @@ ggplot(fatal_cases, aes(x = factor(injSeverity), y = ageOFocc)) +
   stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "blue")
 ```
 
-This creates a visualization showing how age distributes across different injury severity levels.
-
-### (7) Complete SINGLE-for-all function
+### (4.7) Complete SINGLE-for-all function
 
 ```{r}
 # 4.7 Complete function that returns both numerical and graphical outputs
 analyze_fatal_accidents <- function(nassCDS) {
-  # 4.1 - Filter fatal cases
+  # Filter fatal cases
   fatal_cases <- nassCDS %>% filter(dead == "dead")
   
-  # 4.2 - Calculate death percentage
+  # Calculate death percentage
   total_obs <- nrow(nassCDS)
   fatal_count <- nrow(fatal_cases)
   death_pct <- (fatal_count / total_obs) * 100
   
-  # 4.3 - Gender percentages
+  # Gender percentages
   gender_pct <- fatal_cases %>%
     count(sex) %>%
     mutate(percentage = (n / fatal_count) * 100)
   
-  # 4.4 - Most frequent injury severity
+  # Most frequent injury severity
   most_severe <- fatal_cases %>%
     count(injSeverity) %>%
     arrange(desc(n)) %>%
     slice(1)
   
-  # 4.5 - Age range
+  # Age range
   min_age <- min(fatal_cases$ageOFocc, na.rm = TRUE)
   max_age <- max(fatal_cases$ageOFocc, na.rm = TRUE)
   
@@ -456,7 +799,7 @@ analyze_fatal_accidents <- function(nassCDS) {
               round(max_age, 1))
   )
   
-  # 4.6 - Create plot
+  # Create plot
   graphical_output <- ggplot(fatal_cases, aes(x = factor(injSeverity), y = ageOFocc)) +
     geom_boxplot(aes(fill = factor(injSeverity)), alpha = 0.7) +
     labs(title = "Injury Severity vs Age in Fatal Accidents",
@@ -479,7 +822,7 @@ print(results$numerical)
 print(results$plot)
 ```
 
-## Question 5: Seatbelt Users Summary
+## Question 5
 
 ```{r}
 seatbelt_users <- nassCDS[nassCDS$seatbelt=="belted", ]
@@ -491,20 +834,16 @@ seatbelt_users <- seatbelt_users[order(seatbelt_users$injSeverity, seatbelt_user
 head(seatbelt_users[order(-seatbelt_users$weight), ], 25)
 ```
 
-### (1) New df containing only occupants who used seatbel
+### (5.1) Create a new data frame which contains only occupants who used seatbelt.
 
 ```{r}
-# Create a new data frame which contains only occupants who used seatbelt
 seatbelt_users <- nassCDS %>% filter(seatbelt == "belted")
 
 # Check the result
-cat("Created new data frame: seatbelt_users\n")
-cat("Dimensions:", dim(seatbelt_users), "(rows × columns)\n")
-cat("First few rows:\n")
 head(seatbelt_users)
 ```
 
-### (2) How many occupants used seatbelt ?
+### (5.2) How many occupants used seatbelt ?
 
 ```{r}
 total_seatbelt_users <- nrow(seatbelt_users)
@@ -512,7 +851,7 @@ total_seatbelt_users <- nrow(seatbelt_users)
 cat("Occupants who used seatbelt:", total_seatbelt_users, "\n")
 ```
 
-### (3) Survival outcomes among seatbelt users
+### (5.3) Among the individuals who used seatbelt, how many died and how many survived the accident ?
 
 ```{r}
 # Among seatbelt users, how many died and how many survived?
@@ -538,7 +877,7 @@ cat(
 )
 ```
 
-### (4) Role analysis among seatbelt users
+### (4) Among the individuals who used seatbelt, how many were drivers among the individuals who died and how many were passengers among the individuals who survived the accident (use the variable occRole to identify drivers/passengers) ?
 
 ```{r}
 # Analyze drivers vs passengers among different outcomes
@@ -570,7 +909,7 @@ role_summary <- seatbelt_users %>% count(occRole)
 print(role_summary)
 ```
 
-### (5) Sort by injury severity and age
+### (5.5) Sort by injury severity and age
 
 ```{r}
 # Sort the data frame according to injury severity and occupant age
@@ -596,9 +935,7 @@ cat("Max severity:", max(seatbelt_users$injSeverity, na.rm = TRUE), "\n")
 cat("Mean severity:", round(mean(seatbelt_users$injSeverity, na.rm = TRUE), 2), "\n")
 ```
 
-This sorts the seatbelt users dataframe first by injury severity (most severe first) and then by age (oldest first within each severity level)
-
-### (6) Top 25 occupants by weight
+### (5.6) Top 25 occupants by weight
 
 ```{r}
 # Print the 25 occupants with the highest weight
@@ -606,19 +943,27 @@ top_25_weight <- seatbelt_users %>%
   arrange(desc(weight)) %>%
   head(25)
 
-cat("25 seatbelt users with highest weight:\n")
 print(top_25_weight[, c("weight", "ageOFocc", "dead", "injSeverity", "occRole", "sex")])
 ```
 
 ## Question 6: Age, Seatbelt, and Airbag Relationship
 
 ```{r}
-par(mfrow=c(1,2))
-with(nassCDS, {
-boxplot(ageOFocc ~ injSeverity + seatbelt,
-main="Age by Injury Severity (Seatbelt)", col=c("skyblue","lightgreen"))
-boxplot(ageOFocc ~ injSeverity + airbag,
-main="Age by Injury Severity (Airbag)", col=c("pink","lightyellow"))
-})
-
+# Plot
+ggplot(nassCDS, aes(x = factor(injSeverity), y = ageOFocc, fill = injSeverity)) +
+  geom_boxplot() +
+  scale_fill_gradient(low = "darkblue", high = "skyblue") +
+  facet_grid(seatbelt ~ airbag) +
+  labs(
+    x = "injSeverity",
+    y = "ageOFocc",
+    title = NULL,
+    fill = "injSeverity"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    strip.background = element_rect(fill = "lightgray", color = NA),
+    strip.text = element_text(face = "bold"),
+    legend.position = "right"
+  )
 ```
