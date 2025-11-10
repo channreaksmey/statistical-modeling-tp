@@ -699,67 +699,408 @@ if (ci_lower > 0 && ci_upper > 0){
 
 # Question 3
 # 1. Visualize the distribution of the occupant age by sex.
+boxplot(ageOFocc ~ sex,
+        data = nassCDS,
+        main = "Age Distribution by Sex",
+        xlab = "Sex",
+        ylab = "Age of Occupant (years)",
+        col = c("lightblue", "lightpink")
+        )
 
+# Add mean points
+mean_age_sex <- tapply(nassCDS$ageOFocc, nassCDS$sex, mean, na.rm=TRUE)
+points(1:2, mean_age_sex, pch = 18, col = "red", cex = 2)
 
+# Histogram for females
+hist(nassCDS$ageOFocc[nassCDS$sex == "f"],
+     main = "Age Distibution - Females",
+     xlab = "Age (years)",
+     ylab = "Frequency",
+     col = "lightpink"
+     )
 
+hist(nassCDS$ageOFocc[nassCDS$sex == "m"],
+     main = "Age Distibution - Males",
+     xlab = "Age (years)",
+     ylab = "Frequency",
+     col = "lightblue"
+)
 
 # 2. How many occupants over the age of 50 years old survived the accident?
+over_50_survived <- sum(nassCDS$ageOFocc > 50 & nassCDS$dead == "alive", na.rm = TRUE)
+over_50_survived
 
 # 3. Add a binary variable AgeOFocc_class that takes the value of 1 when 
 # the occupant age is over 50 years and 0 for when the occupant age is 50 years or less.
+nassCDS$AgeOFocc_class <- ifelse(nassCDS$ageOFocc > 50, 1, 0)
+table(nassCDS$AgeOFocc_class, useNA = "ifany")
 
 # 4. Create a data frame, nassCDS_o50, containing occupants older than 50 years old. This data frame
 # should contain the variables dead, airbag, weight, and injSeverity. Remove the observations with missing values.
+nassCDS_50 <- nassCDS[nassCDS$ageOFocc > 50 & !is.na(nassCDS$ageOFocc),
+                      c("dead", "airbag", "weight", "injSeverity")]
+table(nassCDS_50)
 
 # 5. What is the dimension of the new data ?
+dim(nassCDS_50)
+str(nassCDS_50)
+
 
 # 6. Among the occupants who are older than 50 years old, use a barplot to visualize the distribution of
 # airbag across the levels of the accident outcome (dead/alive). The variable dead should be on the x-axis.
+airbag_outcome_table <- table(nassCDS_50$dead, nassCDS_50$airbag)
+airbag_outcome_table
+
+barplot(t(airbag_outcome_table),
+        beside = TRUE,
+        main = "Airbag Deployment by Outcome\n(Occupants > 50 years old)",
+        xlab = "Accident Outcome",
+        ylab = "Frequency",
+        col = c("lightgreen", "orange","red"),
+        legend.text = TRUE,
+        args.legend = list(title = "Airbag",
+                           x = "topright",
+                           cex = 0.8
+                           )
+        )
 
 # 7. Among the occupants who are older than 50 years old visualize the distribution of 
 # airbag across the level of injury sevirity (the variable injSeverity).
-
+airbag_injury_table <- table(nassCDS_50$injSeverity, nassCDS_50$airbag)
+airbag_injury_table
 
 # Question 4
 # Write a R function that receives as an input the nassCDS dataset. The function should conduct the following analysis:
-# 1. Select only the observations for which the accident outcome is “dead”.
+analyze_mortality <- function(dataset){
+  cat("    MORTALITY ANALYSIS FUNCTION\n")
+  
+  # 1. Select only the observations for which the accident outcome is “dead”
+  dead_data <- dataset[dataset$dead == "dead" & !is.na(dataset$dead), ]
+  cat("Step 1: Filtered dataset for 'dead' outcomes\n")
+  cat("  Number of deaths:", nrow(dead_data), "\n\n")
+  
+  # 2. Calculate percentage of deaths out of the overall number of observations
+  total_obs <- nrow(dataset)
+  num_deaths <- nrow(dead_data)
+  pct_deaths <- (num_deaths / total_obs) * 100
+  
+  cat("Step 2: Percentage of deaths\n")
+  cat("  Total observations:", total_obs, "\n")
+  cat("  Deaths:", num_deaths, "\n")
+  cat("  Percentage:", round(pct_deaths, 2), "%\n\n")
+  
+  # 3. Calculate the percentages of females and males among the occupants who died in the accident
+  sex_counts <- table(dead_data$sex)
+  sex_percentages <- (sex_counts / num_deaths) * 100
+  
+  pct_female <- sex_percentages["f"]
+  pct_male <- sex_percentages["m"]
+  
+  cat("Step 3: Sex distribution among deaths\n")
+  cat("  Females:", sex_counts["f"], "(", round(pct_female, 2), "%)\n")
+  cat("  Males:", sex_counts["m"], "(", round(pct_male, 2), "%)\n\n")
+  
+  # 4. Show the most frequent severity of their injuries
+  injury_counts <- table(dead_data$injSeverity)
+  most_frequent_injury <- names(which.max(injury_counts))
+  most_frequent_count <- max(injury_counts)
+  
+  cat("Step 4: Most frequent injury severity\n")
+  cat("  Injury severity distribution:\n")
+  print(injury_counts)
+  cat("\n  Most frequent:", most_frequent_injury, 
+      "(n =", most_frequent_count, ")\n\n")
+  
+  # 5. Calculate the minimum and maximum age of the occupant (the variable ageOFocc)
+  min_age <- min(dead_data$ageOFocc, na.rm = TRUE)
+  max_age <- max(dead_data$ageOFocc, na.rm = TRUE)
+  mean_age <- mean(dead_data$ageOFocc, na.rm = TRUE)
+  median_age <- median(dead_data$ageOFocc, na.rm = TRUE)
+  
+  cat("Step 5: Age statistics\n")
+  cat("  Minimum age:", min_age, "years\n")
+  cat("  Maximum age:", max_age, "years\n")
+  cat("  Mean age:", round(mean_age, 2), "years\n")
+  cat("  Median age:", median_age, "years\n\n")
+  
+  numerical_output <- data.frame(
+    Metric = c("Percentage of Deaths (%)",
+               "Percentage Female among Deaths (%)",
+               "Percentage Male among Deaths (%)",
+               "Most Frequent Injury Severity",
+               "Minimum Age (years)",
+               "Maximum Age (years)"),
+    Value = c(round(pct_deaths, 2),
+              round(pct_female, 2),
+              round(pct_male, 2),
+              most_frequent_injury,
+              min_age,
+              max_age)
+  )
+  
+  # 6. produce a histogram with the severity of injuries on the x axis and the occupant’s age on the y axis
+  cat("Step 6: Creating histogram\n\n")
+  
+  # Remove NA values for plotting
+  plot_data <- dead_data[!is.na(dead_data$injSeverity) & 
+                           !is.na(dead_data$ageOFocc), ]
+  
+  # Get unique injury severity levels
+  injury_levels <- sort(unique(plot_data$injSeverity))
+  n_levels <- length(injury_levels)
+  
+  # Set up the plotting area
+  par(mfrow = c(1, 1), mar = c(8, 5, 4, 2))
+  
+  # Create a grouped histogram
+  # We'll use barplot with injury severity on x-axis and mean/median age on y-axis
+  
+  # Calculate statistics for each injury severity level
+  age_by_severity <- tapply(plot_data$ageOFocc, plot_data$injSeverity, 
+                            function(x) c(mean = mean(x, na.rm = TRUE),
+                                          median = median(x, na.rm = TRUE),
+                                          n = length(x)))
+  
+  # Extract means and counts
+  mean_ages <- sapply(age_by_severity, function(x) x[1])
+  counts <- sapply(age_by_severity, function(x) x[3])
+  
+  # Create barplot (histogram) with injury severity on x-axis
+  barplot_obj <- barplot(mean_ages,
+                         names.arg = names(mean_ages),
+                         main = "Mean Age by Injury Severity\n(Among Fatalities)",
+                         xlab = "",
+                         ylab = "Mean Age of Occupant (years)",
+                         col = rainbow(n_levels),
+                         border = "black",
+                         las = 2,
+                         ylim = c(0, max(mean_ages) * 1.2),
+                         cex.names = 0.7)
+  
+  # Add x-axis label with more space
+  mtext("Injury Severity", side = 1, line = 6.5, cex = 1)
+  
+  # Add sample sizes on top of each bar
+  text(x = barplot_obj, 
+       y = mean_ages + max(mean_ages) * 0.05, 
+       labels = paste0("n=", counts),
+       cex = 0.8,
+       col = "blue",
+       font = 2)
+  
+  # Add value labels on bars
+  text(x = barplot_obj, 
+       y = mean_ages/2, 
+       labels = round(mean_ages, 1),
+       cex = 0.8,
+       col = "white",
+       font = 2)
+  
+  # Add grid for better readability
+  grid(nx = NA, ny = NULL, col = "gray", lty = "dotted")
+  
+  # Add overall mean line
+  abline(h = mean_age, col = "red", lwd = 2, lty = 2)
+  legend("topright", 
+         legend = c("Mean age per severity", "Overall mean age"),
+         fill = c("gray", NA),
+         border = c("black", NA),
+         lty = c(NA, 2),
+         lwd = c(NA, 2),
+         col = c(NA, "red"),
+         cex = 0.8,
+         bg = "white")
+  
+  
+  cat("ANALYSIS COMPLETE\n")
+  cat("Numerical Output Table:\n")
+  print(numerical_output, row.names = FALSE)
+  cat("\n")
+  
+  # Return both outputs as a list
+  return(invisible(list(
+    numerical_output = numerical_output,
+    plot_created = TRUE,
+    dead_data = dead_data,
+    summary_stats = list(
+      total_observations = total_obs,
+      number_of_deaths = num_deaths,
+      percentage_deaths = pct_deaths,
+      sex_distribution = sex_percentages,
+      injury_distribution = injury_counts,
+      age_min = min_age,
+      age_max = max_age,
+      age_mean = mean_age,
+      age_median = median_age
+    )
+  )))
+}
 
-# 2. Calculate percentage of deaths out of the overall number of observations.
+analyze_mortality(nassCDS)
 
-# 3. Calculate the percentages of females and males among the occupants who died in the accident.
 
-# 4. Show the most frequent severity of their injuries.
-
-# 5. Calculate the minimum and maximum age of the occupant (the variable ageOFocc).
-
-# 6. produce a histogram with the severity of injuries on the x axis and the occupant’s age on the y axis
-
-# 7. This SINGLE Function should return two outputs:
+# This SINGLE Function should return two outputs:
 #   • Numerical output: 4.2,4.3,4.4 and 4.5 as a table.
 #   • Graphical output: 4.6 as a plot.
 
 
 # Question 5
 # 1. Create a new data frame which contains only occupants who used seatbelt.
+seatbelt_users <- nassCDS[nassCDS$seatbelt == "belted" & !is.na(nassCDS$seatbelt), ]
+names(seatbelt_users)
 
 # 2. How many occupants used seatbelt ?
+n_seatbelt_users <- nrow(seatbelt_users)
+n_seatbelt_users
+
+total_occupants <- nrow(nassCDS)
+total_occupants
+
+pct_seatbelt <- (n_seatbelt_users/total_occupants) * 100
+pct_seatbelt
 
 # 3. Among the individuals who used seatbelt, how many died and how many survived the accident ?
+outcome_table <- table(seatbelt_users$dead)
+n_died <- outcome_table["dead"]
+n_survived <- outcome_table["alive"]
+
+barplot(outcome_table,
+        main = "Accident Outcome\n(Seatbelt Users)",
+        ylab = "Number of Occupants",
+        col = c("lightgreen", "lightcoral"),
+        border = "black",
+        ylim = c(0, max(outcome_table)*1.1)
+        )
+
+text(x=c(0.7, 1.9),
+     y = outcome_table + max(outcome_table)*0.05,
+     labels = outcome_table
+     )
+
+pie(outcome_table,
+   main = "Accident Outcome\n(Seatbelt Users)",
+   col = c("lightgreen", "lightcoral"),
+   labels = paste0(names(outcome_table), "\n", outcome_table, "(", round(outcome_table/sum(outcome_table)*100, 1), "%)")
+   )
 
 # 4. Among the individuals who used seatbelt, how many were drivers among 
 # the individuals who died and how many were passengers among the individuals 
 # who survived the accident (use the variable occRole to identify drivers/passengers) ?
+died_seatbelt <- seatbelt_users[seatbelt_users$dead == "dead" & !is.na(seatbelt_users$dead), ]
+drivers_died <- sum(died_seatbelt$occRole == "driver", na.rm = TRUE)
+drivers_died
+
+role_died_table <- table(died_seatbelt$occRole)
+role_died_table
+
+survived_seatbelt <- seatbelt_users[seatbelt_users$dead == "alive" & !is.na(seatbelt_users$dead), ]
+passengers_survived <- sum(survived_seatbelt$occRole == "pass", na.rm = TRUE)
+passengers_survived
+
+role_survived_table <- table (survived_seatbelt$occRole)
+role_survived_table
+
+summary_role <- data.frame(
+  Outcome = c("Died", "Survived"),
+  Drivers = c(sum(died_seatbelt$occRole == "driver", na.rm=TRUE),
+              sum(survived_seatbelt$occRole == "driver", na.rm=TRUE)),
+  Passengers = c(sum(died_seatbelt$occRole == "pass", na.rm=TRUE),
+                 sum(survived_seatbelt$occRole == "pass", na.rm=TRUE))
+)
+
+summary_role
+
+barplot(t(as.matrix(summary_role[, -1])),
+        beside = TRUE,
+        names.arg = summary_role$Outcome,
+        main = "Role by Outcome\n(Seatbelt Users)",
+        ylab = "Number of Occupants",
+        xlab = "Accident Outcome",
+        col = c("steelblue", "orange"),
+        legend.text = c("Drivers", "Passengers"),
+        args.legend = list(x="topright", cex=0.8)
+        )
+
+prop_matrix <- prop.table(as.matrix(summary_role[, -1]), margin = 1)
+barplot(t(prop_matrix),
+        beside = FALSE,
+        names.arg = summary_role$Outcome,
+        main = "Role Distribution by Outcome\n(Seatbelt Users)",
+        ylab = "Proportion",
+        xlab = "Accident Outcome",
+        col = c("steelblue", "orange"),
+        legend.text = c("Drivers", "Passengers"),
+        args.legend = list(x = "topright", cex = 0.8),
+        ylim = c(0, 1))
+
 
 # 5. Sort the data frame according to the injury’s severity and the occupant age.
+seatbelt_users_sorted <- seatbelt_users[order(seatbelt_users$injSeverity, seatbelt_users$ageOFocc), ]
+head(seatbelt_users_sorted[, c("injSeverity", "ageOFocc", "dead", "occRole", "weight")], 10)
+tail(seatbelt_users_sorted[, c("injSeverity", "ageOFocc", "dead", "occRole", "weight")], 10)
+
 
 # 6. Print the 25 occupants with the highest weight.
+seatbelt_users_by_weight <- seatbelt_users[order(seatbelt_users$weight, decreasing=TRUE), ]
+top_25_weight <- head(seatbelt_users_by_weight, 25)
+
+display_table <- data.frame(
+  Rank = 1:25,
+  Weight = top_25_weight$weight,
+  Age = top_25_weight$ageOFocc,
+  Sex = top_25_weight$sex,
+  Outcome = top_25_weight$dead,
+  Role = top_25_weight$occRole,
+  Injury = top_25_weight$injSeverity,
+  Airbag = top_25_weight$airbag
+)
+
+display_table
 
 
 # Question 6
 # 1. Produce the figure below.
 
+# Prepare the data - remove missing values for the variables we need
+plot_data <- nassCDS[!is.na(nassCDS$injSeverity) & 
+                       !is.na(nassCDS$ageOFocc) & 
+                       !is.na(nassCDS$airbag) & 
+                       !is.na(nassCDS$seatbelt), ]
+plot_data$injSeverity <- factor(plot_data$injSeverity)
 
+p <- ggplot(plot_data, aes(x = injSeverity, y = ageOFocc, fill = injSeverity)) +
+  geom_boxplot(outlier.size = 1.5, outlier.alpha = 0.5) +
+  facet_grid(vars(seatbelt), vars(airbag)) +
+  scale_fill_manual(values = c("0" = "#08306B", 
+                               "1" = "#08519C",
+                               "2" = "#2171B5", 
+                               "3" = "#4292C6",
+                               "4" = "#6BAED6",
+                               "5" = "#9ECAE1",
+                               "6" = "#C6DBEF"),
+                    name = "injSeverity") +
+  labs(x = "injSeverity",
+       y = "ageOFocc",
+       title = NULL) +
+  theme_minimal() +
+  theme(
+    strip.background = element_rect(fill = "lightgray", colour = "gray50"),
+    strip.text = element_text(size = 11, face = "bold", colour = "black"),
+    panel.spacing = unit(0.5, "lines"),
+    panel.grid.major = element_line(colour = "gray90"),
+    panel.grid.minor = element_line(colour = "gray95"),
+    axis.title = element_text(size = 11),
+    axis.text = element_text(size = 9),
+    legend.position = "right",
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9),
+    panel.background = element_rect(fill = "white", colour = NA),
+    plot.background = element_rect(fill = "white", colour = NA)
+  ) +
+  scale_y_continuous(breaks = seq(0, 100, by = 25), limits = c(0, 100))
 
+# Display the plot
+print(p)
 
 
 
