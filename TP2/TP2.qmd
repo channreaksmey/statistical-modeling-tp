@@ -1,0 +1,13 @@
+---
+title: "TP2"
+format: html
+editor: visual
+---
+
+# TP2 - Simple Linear Regression
+
+## Problem 1
+
+Height and weight data (Data file: Htwt) The table below and the the data file give ht = height in centimeters and wt = weight in kilograms for a sample of n = 10 18-year-old girls. The interest is in predicting weight from height.
+
+## 
