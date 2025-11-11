@@ -1,0 +1,230 @@
+---
+title: "TP2-STM"
+author: "Chhaythean LY"
+format: html
+editor: visual
+---
+
+### Simple Linear Regression
+
+#### Problem 1:
+
+(a). Draw a scatterplot of wt on the vertical axis versus ht on the horizontal axis. On the basis of this plot, does a simple linear model make sense for these data? Why or why not?
+
+```{r}
+library(alr4)
+library(knitr)
+data(Htwt)
+
+kable(Htwt)
+```
+
+```{r}
+
+library(ggplot2)
+
+ggplot(Htwt, aes(x = Htwt$ht, y = Htwt$wt)) +
+  geom_point(color = "blue") +
+  labs(title = "Scatterplot of Weight vs Height",
+       x = "Height (inches)",
+       y = "Weight (pounds)") +
+  theme_minimal()
+
+plot(Htwt$ht, Htwt$wt, 
+     xlab = "Height (cm)", 
+     ylab = "Weight (kg)",
+     main = "Weight vs Height for 18-year-old Girls",
+     pch = 16, col = "blue")
+```
+
+(b). Compute estimates of the slope and the intercept for the regression of Y on X. Draw the fitted line on your scatterplot.
+
+```{r}
+
+model <- lm(wt ~ ht, data = Htwt)
+summary(model)
+
+plot(Htwt$ht, Htwt$wt, 
+     xlab = "Height (cm)", 
+     ylab = "Weight (kg)",
+     main = "Weight vs Height with Fitted Regression Line",
+     pch = 16, col = "blue")
+abline(model, col = "red", lwd = 2)
+
+cat("Intercept (β₀):", coef(model)[1], "\n")
+cat("Slope (β₁):", coef(model)[2], "\n")
+```
+
+Thus, Y = 0.5821X - 36.8759
+
+```{r}
+
+library(ggplot2)
+library(alr4)
+data(Htwt)
+
+scatter_fit <- ggplot(data = Htwt, aes(x = ht, y = wt)) +
+  geom_point(color = "red") +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Fitted Line on Scatter Plot",
+       x = "Height (inches)",
+       y = "Weight (pounds)") +
+  theme_minimal()
+
+# Display the plot
+scatter_fit
+
+```
+
+(c). Parameter Interpretation and Hypothesis Tests
+
+```{r}
+
+# Summary
+model_summary <- summary(model)
+print(model_summary)
+
+# Extract specific test statistics and p-values
+cat("\n--- Hypothesis Tests ---\n")
+cat("For H₀: β₀ = 0:\n")
+cat("t-statistic:", model_summary$coefficients[1,3], "\n")
+cat("p-value:", model_summary$coefficients[1,4], "\n\n")
+
+cat("For H₀: β₁ = 0:\n")
+cat("t-statistic:", model_summary$coefficients[2,3], "\n")
+cat("p-value:", model_summary$coefficients[2,4], "\n")
+
+# Interpretation
+cat("\n--- Interpretation ---\n")
+cat("β₀ (Intercept):", round(coef(model)[1], 2), "kg\n")
+cat("This represents the predicted weight when height is 0 cm (not practically meaningful)\n\n")
+
+cat("β₁ (Slope):", round(coef(model)[2], 2), "kg/cm\n")
+cat("For each additional cm in height, weight increases by", round(coef(model)[2], 2),
+    "kg on average\n")
+```
+
+(d). Obtain R^2^ and adjust R\^{2}
+
+```{r}
+
+cat("R-squared:", model_summary$r.squared, "\n")
+cat("Adjusted R-squared:", model_summary$adj.r.squared, "\n")
+
+print(model_summary$adj.r.squared)
+
+cat("R-squared as percentage:", round(model_summary$r.squared * 100, 1), "%\n")
+```
+
+(e). Check all the model assumption for Linear Regression
+
+```{r}
+par(mfrow = c(2, 2))
+plot(model)
+par(mfrow = c(1, 1))
+
+# Additional diagnostic plots
+# 1. Residuals vs Fitted values
+p1 <- plot(fitted(model), residuals(model),
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Values")
+abline(h = 0, col = "red")
+
+# 2. Q-Q plot for normality
+p2 <- qqnorm(residuals(model))
+qqline(residuals(model), col = "red")
+
+# 3. Scale-Location plot
+p3 <- plot(fitted(model), sqrt(abs(residuals(model))),
+     xlab = "Fitted Values",
+     ylab = "√|Standardized Residuals|",
+     main = "Scale-Location Plot")
+
+# Statistical tests
+# Normality test
+shapiro_test <- shapiro.test(residuals(model))
+cat("Shapiro-Wilk normality test p-value:", shapiro_test$p.value, "\n")
+
+```
+
+------------------------------------------------------------------------
+
+**Answer for part e:** The model assumptions we need to check are:
+
+1.  **Linearity**: Residuals vs Fitted plot should show no pattern
+
+2.  **Constant variance**: Scale-Location plot should show horizontal band
+
+3.  **Normality**: Q-Q plot should follow straight line
+
+4.  **Independence**: Residuals should be uncorrelated
+
+Based on these diagnostic plots and tests, we can assess whether the simple linear regression model is appropriate for this data.
+
+#### Problem 2:
+
+```{r}
+library(alr4)
+data("UBSprices")
+
+par(mfrow=c(1,2))
+
+plot(x=UBSprices$rice2003, 
+     y=UBSprices$rice2009, 
+     xlab="2003 Rice price", 
+     ylab="2009 Rice price")
+
+abline(lm(rice2009~rice2003, data=UBSprices), lty=2)
+abline(a=0, b=1, lty=1)
+
+legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
+plot(x=UBSprices$rice2003, y=UBSprices$rice2009,
+     
+xlab="2003 Rice price",
+ylab="2009 Rice price")
+
+text(x=UBSprices$rice2003, y=UBSprices$rice2009,
+labels=row.names(UBSprices), cex=0.6, font=2)
+
+abline(lm(rice2009~rice2003, data=UBSprices), lty=2)
+abline(a=0, b=1, lty=1)
+
+legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
+```
+
+(a). The line with equation y = x is shown on this plot as the solid line. What is the key difference between points above this line and points below the line?
+
+The line $y=x$ represents **no change in price** (in minutes of labor) from 2003 to 2009.
+
+-   **Points above the line**:\
+    y \> x → rice2009 \> rice2003 → price in 2009 is **higher** than in 2003.
+
+-   **Points below the line**:\
+    y \< x → rice2009 \< rice2003 → price in 2009 is **lower** than in 2003.
+
+So, **above** means price increased; **below** means price decreased.
+
+(b). Which city had the largest increase in rice price? Which had the largest decrease in rice price
+
+```{r}
+data("UBSprices", package = "alr4")
+UBSprices$diff <- UBSprices$rice2009 - UBSprices$rice2003
+# Largest increase
+UBSprices[which.max(UBSprices$diff),]
+# Largest decrease
+UBSprices[which.min(UBSprices$diff),]
+```
+
+(c).
+
+#### Problem 3:
+
+```{r}
+plot(x=log(UBSprices$rice2003), y=log(UBSprices$rice2009),
+xlab="log(2003 Rice price)",
+ylab="log(2009 Rice price)")
+abline(lm(log(rice2009)~log(rice2003), data=UBSprices), lty=2)
+abline(a=0, b=1, lty=1)
+legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
+```

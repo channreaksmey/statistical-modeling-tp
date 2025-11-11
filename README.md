@@ -4,7 +4,7 @@ This repository contains **TP** files, exercises, and corresponding solutions fo
 
 ## Course Information
 
-Course: Statistical Modeling
+Course: **Statistical Modeling**
 
 Instructor: **Mr. PHOK PONNA**
 
@@ -12,6 +12,8 @@ Department: Applied Mathematics and Statistics
 
 ## Made with ❤️ by
 
-* **SOM Chann Reaksmey** 
-* **Ny Chantharith**
-* **NGEN Tina**
+* SOM Chann Reaksmey (SCR)
+* NY Chantharith (NCR)
+* NGEN Tina (NGT)
+* YENG Kheang (Y2K)
+* LY Chhaythean (LCT)
