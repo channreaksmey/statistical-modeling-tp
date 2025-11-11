@@ -1066,6 +1066,8 @@ plot_data <- nassCDS[!is.na(nassCDS$injSeverity) &
                        !is.na(nassCDS$ageOFocc) & 
                        !is.na(nassCDS$airbag) & 
                        !is.na(nassCDS$seatbelt), ]
+
+# Convert injSeverity to factor for proper grouping in boxplot
 plot_data$injSeverity <- factor(plot_data$injSeverity)
 
 p <- ggplot(plot_data, aes(x = injSeverity, y = ageOFocc, fill = injSeverity)) +
