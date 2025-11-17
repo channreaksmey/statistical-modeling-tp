@@ -50,13 +50,62 @@ abline(a=0, b=1, lty=1)
 legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
 ```
 
-a\. The line with equation $y=x$ is shown on this plot as the solid line. What is the key difference between points above this line and points below the line?
+#### a. The line with equation $y=x$ is shown on this plot as the solid line. What is the key difference between points above this line and points below the line?
 
-b\. Which city had the largest increase in rice price? Which had the largest decrease in rice price?
+The solid line $y=x$ represents no change in rice prices between 2003 and 2009.
 
-c\. The ols line $\hat{y}=\hat{\beta}_0+\hat{\beta}_1x$ is shown on the figure as a dashed line, and evidently $\hat{\beta}_1<1$. Does this suggest that prices are lower in 2009 than in 2003? Explain your answer.
+-   Points above the line ($y>x$): Cities where rice prices increased from 2003 to 2009. The rice price in 2009 is higher than it was in 2003.
 
-d\. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
+-   Points below the line ($y<x$): Cities where rice prices decreased from 2003 to 2009. The rice price in 2009 is lower than it was in 2003.
+
+-   Points on the line: Cities where rice prices remained the same (no change).
+
+#### b. Which city had the largest increase in rice price? Which had the largest decrease in rice price?
+
+Largest increases in rice prices:
+
+-   Vilnius appears to have the largest increase. It had a relatively low price in 2003 (around 10-15 minutes) but a very high price in 2009 (around 75 minutes).
+
+Largest decrease in rice price:
+
+-   Nairobi appears to have the largest decrease. It had a relatively high price in 2003 (around 70 minutes) but dropped to around 50 minutes in 2009.
+
+-   Alternatively, Mumbai also shows a notable decrease, going from around 85 minutes in 2003 to around 35 minutes in 2009 (though this seems extreme and might warrant data verification).
+
+#### c. The ols line $\hat{y}=\hat{\beta}_0+\hat{\beta}_1x$ is shown on the figure as a dashed line, and evidently $\hat{\beta}_1<1$. Does this suggest that prices are lower in 2009 than in 2003? Explain your answer.
+
+No, $\hat{\beta_1}<1$ does not necessarily mean that prices are lower in 2009 than in 2003.
+
+The OLS line is: $\hat{y}=\hat{\beta}_0+\hat{\beta}_1x$
+
+-   If $\hat{\beta}_1<1$, this means that for every 1 minute increase in 2003 rice price, the 2009 rice price increase by less than 1 minute (on average).
+-   This indicates convergence or "regression to the mean": cities with very high prices in 2003 tend to have somewhat lower relative increases (or even decreases) by 2009, while cities with low prices in 2003 might have proportionally larger increases.
+-   Whether prices are higher or lower in 2009 depends on both $\hat{\beta}_0$ and $\hat{\beta}_1$, not just $\hat{\beta}_1$ alone.
+
+For example, if $\hat{\beta}_0=5$ and $\hat{\beta}_1=0.8$:
+
+-   A city with $x=10$ in 2003 would have $\hat{y}=5+0.8(10)=13$ in 2009 (increase)
+
+-   A city with $x=20$ in 2003 would have $\hat{y}=5+0.8(20)=21$ in 2009 (increase)
+
+The intercept $\hat{\beta_0}<0$ suggest that even cities with zero 2003 prices would have positive 2009 prices, indicating an overall upward shift. Looking at the graph, most points are indeed above the lower-left origin area, suggesting general price increases despite $\hat{\beta_1}<1$.
+
+#### d. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
+
+1.  **Heteroscedasticity (Non-constant variance):**
+    -   The scatter of points clearly increases as x increases. Cities with low 2003 prices (left side of plot) show relatively tight clustering, while cities with high 2003 prices (right side) show much greater variability in their 2009 prices.
+
+    -   This violates the constant variance assumption of linear regression, making standard errors and confidence intervals unreliable.
+
+    -   The points appear to fan out as you move from left to right.
+2.  **Non-linear relationship / Outliers:**
+    -   The relationship doesn't appear strictly linear. There are several **influential outliers** (like Vilnius at top left and possibly Nairobi/Mumbai at the right) that may be unduly influencing the fitted line.
+
+    -   The curvature in the relationship is suggested by how the points cluster: there's a dense cluster at the lower left, and the points don't follow a consistent linear pattern throughout.
+
+    -   **Alternatively**: The data shows a multiplicative rather than additive relationship (prices tend to change proportionally), which suggests a **log transformation** would be more appropriate (as explored in your first question).
+
+**Additional consideration**: The presence of such extreme outliers (Vilnius, Nairobi, Mumbai) suggests that a few cities experienced very unusual economic conditions that may not be well-captured by a simple linear model fit to all cities together.
 
 ## Problem 3
 
