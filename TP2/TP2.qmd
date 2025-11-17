@@ -10,4 +10,161 @@ editor: visual
 
 Height and weight data (Data file: Htwt) The table below and the the data file give ht = height in centimeters and wt = weight in kilograms for a sample of n = 10 18-year-old girls. The interest is in predicting weight from height.
 
+a\. Drawv a scatterplot of $wt$ on the vertical axis versus $ht$ on the horizontal axis. On the basis of the plot, does a simple linear model make sense for these data? Why or why not?
+
+b\. Compute estimates of the slope and the intercept for the regression of $Y$ on $X$. Draw the fitted line on your scatterplot.
+
+c\. Interpret the parameter estimates $\hat{\beta}_0$ and $\hat{\beta}_1$. Obtain the $t$-tests for the hypotheses that $\beta_0=0$ and $\beta_1=0$ and $p$-values using two-sided tests. what is your conclusion based on the $p$-values.
+
+d\. Obtain $R^2$ and adjusted $R^2$. What can you say about them?
+
+e\. Check all the model assumptions for this simple linear regression.
+
+## Problem 2
+
+(Data file: \UBSprices) The international bank UBS regularly produces a report (UBS, 2009) on prices and earnings in major cities throughtout the world. Three of the measures they include are prices of basic commodities, namely 1kg of rice, 1kg loaf of bread, and the price of a Big Mac Hamburger at McDonalds. An interesting feature of the prices they report is that prices are measured in the minuted of labor required for a "typical" worker in that location ti earn enough money to purchase the commodity. Using minutes of labor corrects at least in part for currency fluctuations, prevailing wage rates, and local prices. The data file includes measurements for rice, bread, and Big Mac prices from the 2003 and the 2009 reports. The year 2003 was before the major recession hit much of the world around 2006, and the year 2009 may reflect changed in prices due to the recession. The figure below is the plot of y = `rice2009`{=} versus x = `rice2003`{=texinfo}, the price of rice in 2009 and 2003, respectively, with the cities corresponding to a few of the points marked.
+
+```{r}
+library(alr4)
+data("UBSprices")
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(x=UBSprices$rice2003, y=UBSprices$rice2009,
+     xlab="2003 Rice price",
+     ylab="2009 Rice price")
+#identify(x=UBSprices$rice2003, y=UBSprices$rice2009,
+#         labels=row.names(UBSprices), n=5)
+abline(lm(rice2009~rice2003, data=UBSprices), lty=2)
+abline(a=0, b=1, lty=1)
+legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
+
+plot(x=UBSprices$rice2003, y=UBSprices$rice2009,
+     xlab="2003 Rice price",
+     ylab="2009 Rice price")
+text(x=UBSprices$rice2003, y=UBSprices$rice2009,
+     labels=row.names(UBSprices), cex=0.6, font=2)
+abline(lm(rice2009~rice2003, data=UBSprices), lty=2)
+abline(a=0, b=1, lty=1)
+legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
+```
+
+a\. The line with equation $y=x$ is shown on this plot as the solid line. What is the key difference between points above this line and points below the line?
+
+b\. Which city had the largest increase in rice price? Which had the largest decrease in rice price?
+
+c\. The ols line $\hat{y}=\hat{\beta}_0+\hat{\beta}_1x$ is shown on the figure as a dashed line, and evidently $\hat{\beta}_1<1$. Does this suggest that prices are lower in 2009 than in 2003? Explain your answer.
+
+d\. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
+
+## Problem 3
+
+(Data file: `UBSprices`{=bibtex}) This is a continuation of Problem 2. An alternative representation of the data used in the last problem is to use log scales, as in the following figure:
+
+```{r}
+plot(x=log(UBSprices$rice2003), y=log(UBSprices$rice2009),
+     xlab="log(2003 Rice price)",
+     ylab="log(2009 Rice price)")
+
+abline(lm(log(rice2009)~log(rice2003), data=UBSprices), lty=2)
+abline(a=0, b=1, lty=1)
+legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
+```
+
+#### a. Explain why this graph and the graph in Problem 2 suggests that using log-scale is preferable if fitting simple linear regression is desired.
+
+1.  **Linearization of the relationship:** The log-log plot shows a much more linear relationship between the variables. The dashed lines (OLS fitted line) closely follows the pattern of the data points, whereas in the original scale in problem 2, the relationship likely exhibited curvature or heteroscedasticity.
+2.  **Reduction of heteroscedasticity:** In the original scale. the variance of y typically increase with x (larger prices have larger variability). Taking logs stabilizes the variance, making the scatter more uniform acrosss the range of x values. Notice how the points are relatively evenly distributed around the fitted line throughout the range.
+3.  Better handling of outliers: The log transformation compresses the scale, making extreme values less influential without eliminating them entirely.
+4.  Improved residual behavior: The log transformation often makes residuals more normally distributed and homoscedastic, which are key assumptions for linear regression.
+
+#### b. Suppose we start with a proposed model
+
+#### $$E(y|x)=\gamma_0x^{\beta_1}$$
+This is a common model in many areas of study. Examples include allometry (Gould, 1966), where x could represent the size of one body characteristic such as total weight and y represents some other body characteristic, such as brain weight, psychophysics (Stevens, 1966), in which x is a physical stimulus and y is a psychological response to it, or in economics, where x could represent inputs and y outputs, where this relationship is often called a Cobb-Douglas production function (Greene, 2003).
+
+#### If we take the logs of both sides of the last equation, we get
+
+#### $$\log(E(y|x))=\log(\gamma_0)+\beta_1\log(x)$$
+
+#### If we approximate $\log(E(y|x))\approx E(\log(y)|x)$, and write $\beta_0=\log(\gamma_0)$, to the extent that the logarithm of the expectation equals the expectation of the logarithm, we have
+
+#### $$E(\log(y)|x)=\beta_0+\beta_1\log(x)$$
+
+#### Give an interpretation of $\beta_0$ and $\beta_1$ in this setting, assuming $\beta_1>0$.
+
+\>\>\>
+
+Starting with the power law model:
+
+$$
+E(y|x)=γ_0xβ_1
+$$
+
+After taking logs and making the approximation, we get:
+
+$$
+E(log(y)|x)=β_0+β_1log(x)
+$$
+
+where $\beta_0=\log(\gamma_0)$.
+
+Interpretation of $\beta_1$ (assuming $\beta_1>0$):
+
+$\beta_1$ represent the elasticity of y with respect to x. Specifically:
+
+-   $\beta_1$ is the percentage change in y associated with a 1% increase in x
+
+-   Mathematically: if x increase by 1%, then y increases by approximately $\beta_1$%
+
+-   This is because: $\frac{d\log(y)}{d\log(x)}=\beta_1$
+
+For example:
+
+-   If $\beta_1=1$, the relationship is proportional (y=x line): a 1% increase in x leads to a 1% increase in x leads to a 1% increase y
+
+-   If $\beta_1=0.5$, a 1% increase in c leads to a 0.5% increase in y (diminishing returns)
+
+-   If $\beta_1=1.5$, a 1% increase in x leads to 1.5% increase in y (increasing returns)
+
+Interpretation of $\beta_0$:
+
+$\beta_0=\log(\gamma_0)$, so $\gamma_0=\exp(\beta_0)$
+
+-   $\gamma_0$ represents the value of $E(y|x)$ when $x=1$
+
+-   In the original power law model: when $x=1$, $E(y|1)=\gamma_0(1)^{\beta_1}=\gamma_0$
+
+-   $\beta_0$ is the log of this baseline value
+
+In the context of your graph (rice prices), if $\beta_1\approx1$ (as suggested by the proximity of the OLS line to the y=x line), this would indicate that rice prices in 2009 and 2003 are roughly proportional - countries with higher prices in 2003 tend to have proportionally higher prices in 2009, maintaining relative price relationships.
+
+## Problem 4
+
+(Data file: \UBSprices) This problem continues with the data file \UBSprices described in Problem 2.
+
+a\. Draw the plot of `y=bigmac2009`{=} versus `x=bigmac2003`{=}, the price of a Big Mac hamburger in 2009 and 2003. On this plot draw (1) the ols fitted line; (2) the line y= x. Identify the most unusual cases and describe why they are unusual.
+
+b\. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
+
+c\. Plot log(`bigmac2009`{=}) versus log() and explain(`bigmac2003`{=}) why this graph is more sensibly summarized with a linear regression.
+
 ## 
+Problem 5
+
+**Ft. Collins temperature data** (Data file: \ftcollinstemp) The data file gives the mean temperature in the \fall of each year, defined as September 1 to November 30, and the mean temperature in the following \winter, defined as December 1 to the end of February in the following calendar year, in degrees Fahrenheit, for Ft. Collins, CO (Colorado Climate Center, 2012). These data cover the time period from 1900 to 2010. The question of interest is: Does the average \fall temperature predict the average \winter temperature?
+
+```{r}
+library(alr4)
+data("ftcollinstemp")
+head(ftcollinstemp)
+```
+
+a\. Draw a scatterplot of the response versus the predictor, and describe any pattern you might see in the plot.
+
+b\. Use statistical software to fit the regression of the response on the predictor. Add the fitted line to your graph. Test the slope to be 0 against a two-sided alternative, and summarize your results.
+
+c\. Compute or obtain from your computer output the value of the variability in winter explained by fall and explain what this means.
+
+d\. Divide the data into 2 time periods, an early period from 1900 to 1989, and a late period from 1990 to 2010. You can do this using the variable year in the data file. Are the results different in the two time periods?
