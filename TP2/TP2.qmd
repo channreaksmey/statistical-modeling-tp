@@ -193,13 +193,192 @@ In the context of your graph (rice prices), if $\beta_1\approx1$ (as suggested b
 
 (Data file: \UBSprices) This problem continues with the data file \UBSprices described in Problem 2.
 
-a\. Draw the plot of `y=bigmac2009`{=} versus `x=bigmac2003`{=}, the price of a Big Mac hamburger in 2009 and 2003. On this plot draw (1) the ols fitted line; (2) the line y= x. Identify the most unusual cases and describe why they are unusual.
+#### a. Draw the plot of `y=bigmac2009`{=} versus `x=bigmac2003`{=}, the price of a Big Mac hamburger in 2009 and 2003. On this plot draw (1) the ols fitted line; (2) the line y= x. Identify the most unusual cases and describe why they are unusual.
 
-b\. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
+```{r}
+# Left plot: without labels
+plot(UBSprices$bigmac2003, UBSprices$bigmac2009,
+     xlab = "2003 Big Mac price (minutes of labor)",
+     ylab = "2009 Big Mac price (minutes of labor)",
+     main = "Big Mac Prices: 2009 vs 2003",
+     pch = 1, cex = 1.2)
 
-c\. Plot log(`bigmac2009`{=}) versus log() and explain(`bigmac2003`{=}) why this graph is more sensibly summarized with a linear regression.
+# Fit OLS regression
+fit <- lm(bigmac2009 ~ bigmac2003, data = UBSprices)
 
-## 
+# Add OLS fitted line (dashed)
+abline(fit, lty = 2, lwd = 2)
+
+# Add y=x line (solid)
+abline(0, 1, lty = 1, lwd = 2)
+
+# Add legend
+legend("topleft", legend = c("ols", "y=x"), 
+       lty = c(2, 1), lwd = 2, cex = 0.8)
+
+# Right plot: with city labels for unusual cases
+plot(UBSprices$bigmac2003, UBSprices$bigmac2009,
+     xlab = "2003 Big Mac price (minutes of labor)",
+     ylab = "2009 Big Mac price (minutes of labor)",
+     main = "Big Mac Prices with City Labels",
+     pch = 1, cex = 1.2)
+
+# Add lines
+abline(fit, lty = 2, lwd = 2)
+abline(0, 1, lty = 1, lwd = 2)
+
+# Identify unusual cases
+# Calculate residuals and leverage
+residuals <- residuals(fit)
+fitted_vals <- fitted(fit)
+std_resid <- rstandard(fit)
+
+# Find unusual points (large residuals or high leverage)
+unusual <- abs(std_resid) > 2 | UBSprices$bigmac2003 > 100 | 
+           UBSprices$bigmac2009 > 120
+
+# Label unusual cities
+text(UBSprices$bigmac2003[unusual], 
+     UBSprices$bigmac2009[unusual],
+     labels = rownames(UBSprices)[unusual],
+     pos = 3, cex = 0.7)
+
+legend("topleft", legend = c("ols", "y=x"), 
+       lty = c(2, 1), lwd = 2, cex = 0.8)
+
+```
+
+```{r}
+cat("\nRegression Summary:\n")
+print(summary(fit))
+
+cat("\nMost Unusual Cities:\n")
+unusual_cities <- data.frame(
+  City = rownames(UBSprices)[unusual],
+  BigMac2003 = UBSprices$bigmac2003[unusual],
+  BigMac2009 = UBSprices$bigmac2009[unusual],
+  Change = UBSprices$bigmac2009[unusual] - UBSprices$bigmac2003[unusual],
+  StdResid = std_resid[unusual]
+)
+print(unusual_cities[order(-abs(unusual_cities$StdResid)),])
+
+```
+
+#### b. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
+
+```{r}
+# 1. Residual vs Fitted plot (check for non-constant variance)
+plot(fitted_vals, residuals,
+     xlab = "Fitted values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Values")
+abline(h = 0, lty = 2, col = "red")
+lines(lowess(fitted_vals, residuals), col = "blue", lwd = 2)
+
+# 2. Scale-Location plot (check for heteroscedasticity)
+plot(fitted_vals, sqrt(abs(std_resid)),
+     xlab = "Fitted values",
+     ylab = "√|Standardized Residuals|",
+     main = "Scale-Location Plot")
+lines(lowess(fitted_vals, sqrt(abs(std_resid))), col = "blue", lwd = 2)
+
+# 3. Q-Q plot (check for normality)
+qqnorm(std_resid, main = "Normal Q-Q Plot")
+qqline(std_resid, col = "red", lwd = 2)
+
+# 4. Residuals vs Leverage (check for influential points)
+plot(hatvalues(fit), std_resid,
+     xlab = "Leverage",
+     ylab = "Standardized Residuals",
+     main = "Residuals vs Leverage")
+abline(h = c(-2, 0, 2), lty = 2, col = "gray")
+
+```
+
+**Reason 1: Heteroscedasticity**
+
+-   The residual vs fitted plot will show that variance increases with fitted values
+
+-   This "fanning out" pattern violates the constant variance assumption
+
+-   Larger predicted values have larger residual spread
+
+**Reason 2: Influential Outliers**
+
+-   Several cities with extreme prices heavily influence the regression line
+
+-   These outliers may not represent the general pattern
+
+-   Q-Q plot and leverage plots identify these influential points
+
+#### c. Plot log(`bigmac2009`{=}) versus log() and explain(`bigmac2003`{=}) why this graph is more sensibly summarized with a linear regression.
+
+```{r}
+# Calculate log transformations (removing any non-positive values)
+valid_data <- UBSprices$bigmac2003 > 0 & UBSprices$bigmac2009 > 0
+log_bigmac2003 <- log(UBSprices$bigmac2003[valid_data])
+log_bigmac2009 <- log(UBSprices$bigmac2009[valid_data])
+valid_cities <- rownames(UBSprices)[valid_data]
+
+# Left plot: log-log without labels
+plot(log_bigmac2003, log_bigmac2009,
+     xlab = "log(2003 Big Mac price)",
+     ylab = "log(2009 Big Mac price)",
+     main = "Log-Log Plot of Big Mac Prices",
+     pch = 1, cex = 1.2)
+
+# Fit OLS on log scale
+fit_log <- lm(log_bigmac2009 ~ log_bigmac2003)
+abline(fit_log, lty = 2, lwd = 2)
+abline(0, 1, lty = 1, lwd = 2)
+
+legend("topleft", legend = c("ols", "y=x"), 
+       lty = c(2, 1), lwd = 2, cex = 0.8)
+
+# Right plot: with residual analysis
+residuals_log <- residuals(fit_log)
+fitted_log <- fitted(fit_log)
+
+plot(fitted_log, residuals_log,
+     xlab = "Fitted log(2009 price)",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (Log Scale)",
+     pch = 1)
+abline(h = 0, lty = 2, col = "red", lwd = 2)
+lines(lowess(fitted_log, residuals_log), col = "blue", lwd = 2)
+
+```
+
+```{r}
+cat("\nLog-scale regression summary:\n")
+print(summary(fit_log))
+
+cat("\nComparison of model fits:\n")
+cat(sprintf("Original scale R²: %.4f\n", summary(fit)$r.squared))
+cat(sprintf("Log scale R²: %.4f\n", summary(fit_log)$r.squared))
+```
+
+**Reason 1: Linearization**
+
+-   The log-log relationship is much more linear than the original scale
+
+-   Points cluster more evenly around the regression line
+
+**Reason 2: Homoscedasticity**
+
+-   Residual variance becomes more constant across the range
+
+-   The residual plot shows more uniform scatter
+
+**Reason 3: Multiplicative Effects**
+
+-   The slope in log-log represents **elasticity**: the percentage change in 2009 prices for a 1% change in 2003 prices
+
+-   This multiplicative relationship is more natural for economic data
+
+-   Prices tend to change proportionally rather than additively
+
+#### 
 Problem 5
 
 **Ft. Collins temperature data** (Data file: \ftcollinstemp) The data file gives the mean temperature in the \fall of each year, defined as September 1 to November 30, and the mean temperature in the following \winter, defined as December 1 to the end of February in the following calendar year, in degrees Fahrenheit, for Ft. Collins, CO (Colorado Climate Center, 2012). These data cover the time period from 1900 to 2010. The question of interest is: Does the average \fall temperature predict the average \winter temperature?
