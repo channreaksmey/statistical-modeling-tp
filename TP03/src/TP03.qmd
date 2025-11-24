@@ -1,0 +1,198 @@
+---
+title: "TP03-STM"
+format: html
+author: LY-Chhaythean
+---
+
+### Problem 1
+
+For this problem, consider the regression problem with response BSAAM, and three predictors as regressors given by OPBPC, OPRC, and OPSLAKE.
+
+1.  Examine the scatterplot matrix drawn for these three regressors and the response. What should the correlation matrix look like (i.e., which correlations are large and positive, which are large and negative, and which are small?) Compute the correlation matrix to verify your results.
+
+    ```{r}
+
+    # install.package("alr4")
+
+    library(alr4)
+
+    data(water)
+    head(water)
+    ```
+
+```{r}
+#install.package("GGally")
+
+# scatter plot matrix
+library(GGally)
+
+scatter_matrix <- ggpairs(water, columns = 5:8, lower = list(continuous = "smooth"))
+print(scatter_matrix)
+
+# Your pairs plot (this should work fine)
+pairs(water[, c("OPBPC", "OPRC", "OPSLAKE", "BSAAM")],
+      main = "Scatterplot Matrix of Predictors and Response")
+
+# Correlation matrix
+cor_matrix <- cor(water[, c("OPBPC", "OPRC", "OPSLAKE", "BSAAM")])
+print(cor_matrix)
+
+```
+
+2.  Get the regression summary for the regression of BSAAM on these three regressors. Explain what the “t-values” columns of your output means.
+
+    ```{r}
+
+    model <- lm(BSAAM ~ OPBPC + OPRC + OPSLAKE, data = water)
+    summary(model)
+    ```
+
+### Problem 2: 
+
+Berkeley Guidance Study (Data file: BGSgirls) Data from the Berkeley Guidance Study on the growth of boys and girls. We will view body mass index at age 18 BIM18, as the response, and weights in kilogram at ages 2, 9, and 18, WT2, WT9, and WT18 as predictor.
+
+```{r}
+library(alr4)
+data("BGSgirls")
+#help("BGSgirls")
+head(BGSgirls)
+```
+
+1.  Obtain the scatterplot matrix for these four variables. Define which predictor variable has the strongest relationship with BMI18 and what can you say about it. Is transformation neccessary in this case?
+
+```{r}
+
+ggpairs(BGSgirls, columns = c("WT2", "WT9", "WT18", "BMI18"),
+        lower = list(continuous = "smooth"))
+```
+
+```{r}
+cor_matrix <- cor(BGSgirls[, c("WT2", "WT9", "WT18", "BMI18")], use = "complete.obs")
+print(cor_matrix)
+```
+
+2.  Comment on the correlation among the predictor variables.
+
+    ```{r}
+
+    predictor_cor <- cor(BGSgirls[, c("WT2", "WT9", "WT18")], use = "complete.obs")
+    print(predictor_cor)
+    ```
+
+3.  Obtain the summary table for the multiple linear regression with the three predictors. Interpret the βj coefficients obtained from the model. Do the results make sense?
+
+    ```{r}
+
+    model <- lm(BMI18 ~ WT2 + WT9 + WT18, data = BGSgirls)
+    summary(model)
+    ```
+
+```{r}
+# Create transformed variables
+BGSgirls$ave <- (BGSgirls$WT2 + BGSgirls$WT9 + BGSgirls$WT18) / 3
+BGSgirls$lin <- BGSgirls$WT18 - BGSgirls$WT2
+BGSgirls$quad <- BGSgirls$WT2 - 2 * BGSgirls$WT9 + BGSgirls$WT18
+
+# Fit model with transformed predictors
+model_transformed <- lm(BMI18 ~ ave + lin + quad, data = BGSgirls)
+summary(model_transformed)
+
+# Compare correlations
+cor_transformed <- cor(BGSgirls[, c("ave", "lin", "quad")], use = "complete.obs")
+print(cor_transformed)
+```
+
+### Problem 3: 
+
+1.  In the fit of M4, some of the coefficients estimates are labeled as “aliased (NA)” or else they are simply omitted. Explain what this means and why this happens.
+
+```{r}
+
+# define and fit all the model
+
+library(alr4)
+data(Transact)
+
+Transact$a <- (Transact$t1 + Transact$t2)/2
+Transact$d <- Transact$t1 - Transact$t2
+
+M1 <- lm(time ~ t1 + t2, data = Transact)
+M2 <- lm(time ~ a + d, data = Transact)
+M3 <- lm(time ~ t2 + d, data = Transact)
+M4 <- lm(time ~ t1 + t2 + a + d, data = Transact)
+
+cat("------ Summary M1: --------")
+summary(M1)
+cat("---------------------------")
+
+cat("\n------ Summary M2: --------")
+summary(M2)
+cat("---------------------------")
+
+cat("\n------ Summary M3: --------")
+summary(M3)
+cat("---------------------------")
+
+cat("\n------ Summary M4:---------")
+summary(M4)
+cat("---------------------------")
+```
+
+2.  What aspects of the fitted regressions are the same? What aspects are different?
+
+```{r}
+cat("R-squared values:\n")
+cat("M1:", summary(M1)$r.squared, "\n")
+cat("M2:", summary(M2)$r.squared, "\n")
+cat("M3:", summary(M3)$r.squared, "\n")
+cat("M4:", summary(M4)$r.squared, "\n")
+
+cat("\nResidual standard errors:\n")
+cat("M1:", summary(M1)$sigma, "\n")
+cat("M2:", summary(M2)$sigma, "\n")
+cat("M3:", summary(M3)$sigma, "\n")
+cat("M4:", summary(M4)$sigma, "\n")
+```
+
+**What's the same:**
+
+-   **R-squared values**: All models will have identical R-squared because they're different parameterizations of the same underlying relationship
+
+-   **Fitted values**: All models will produce identical predictions for the same (t1, t2) values
+
+-   **Residuals**: The residuals will be identical across all models
+
+-   **Overall F-test**: The overall significance of the regression will be the same
+
+**What's different:**
+
+-   **Coefficient estimates**: The individual β coefficients will differ
+
+-   **Interpretation of coefficients**: Each model provides a different interpretation:
+
+    -   M1: Direct effects of t1 and t2
+
+    -   M2: Effects of average transactions and difference between transaction types
+
+    -   M3: Effect of t2 and the difference between transaction types
+
+    -   M4: Cannot be fully estimated due to aliasing
+
+-   **Standard errors**: The precision of coefficient estimates will differ
+
+3.  Why is the estimate for t2 different in M1 and M3?
+
+```{r}
+cat("t2 coefficient in M1:", coef(M1)["t2"], "\n")
+cat("t2 coefficient in M3:", coef(M3)["t2"], "\n")
+```
+
+The t2 coefficient differs between M1 and M3 because the **interpretation changes** due to different conditioning:
+
+-   **In M1**: `β₂` represents the effect of t2 **holding t1 constant**
+
+-   **In M3**: The coefficient for t2 represents the effect of t2 **holding d constant**, where `d = t1 - t2`
+
+Since holding d constant implies a specific relationship between t1 and t2 (if d is fixed, then t1 = t2 + d), the interpretation fundamentally changes. This is a classic example of how coefficient interpretation depends on what other variables are included in the model and how they're parameterized.
+
+**Key insight**: All these models are mathematically equivalent reparameterizations - they fit the same response surface but provide different lenses through which to interpret the relationship between transaction volumes and labor time.
