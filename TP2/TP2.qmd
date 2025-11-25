@@ -187,7 +187,7 @@ $\beta_0=\log(\gamma_0)$, so $\gamma_0=\exp(\beta_0)$
 
 -   $\beta_0$ is the log of this baseline value
 
-In the context of your graph (rice prices), if $\beta_1\approx1$ (as suggested by the proximity of the OLS line to the y=x line), this would indicate that rice prices in 2009 and 2003 are roughly proportional - countries with higher prices in 2003 tend to have proportionally higher prices in 2009, maintaining relative price relationships.
+In the context of the graph (rice prices), if $\beta_1\approx1$ (as suggested by the proximity of the OLS line to the y=x line), this would indicate that rice prices in 2009 and 2003 are roughly proportional - countries with higher prices in 2003 tend to have proportionally higher prices in 2009, maintaining relative price relationships.
 
 ## Problem 4
 
@@ -262,6 +262,76 @@ unusual_cities <- data.frame(
 )
 print(unusual_cities[order(-abs(unusual_cities$StdResid)),])
 
+```
+
+```{r}
+cat("\n--- Identifying Unusual Cases ---\n")
+# Create comprehensive unusual cases analysis
+unusual_cities <- data.frame(
+  City = rownames(UBSprices)[unusual],
+  BigMac2003 = UBSprices$bigmac2003[unusual],
+  BigMac2009 = UBSprices$bigmac2009[unusual],
+  Change = UBSprices$bigmac2009[unusual] - UBSprices$bigmac2003[unusual],
+  PercentChange = 100*(UBSprices$bigmac2009[unusual] - UBSprices$bigmac2003[unusual])/UBSprices$bigmac2003[unusual],
+  Fitted = fitted_vals[unusual],
+  Residual = residuals[unusual],
+  StdResid = std_resid[unusual]
+)
+
+# Sort by absolute standardized residual
+unusual_cities <- unusual_cities[order(-abs(unusual_cities$StdResid)),]
+
+cat("\nTable of Unusual Cities:\n")
+print(unusual_cities)
+
+cat("\n--- Why Each City is Unusual ---\n\n")
+
+for(i in 1:nrow(unusual_cities)) {
+  city <- unusual_cities[i,]
+  cat(sprintf("** %s **\n", city$City))
+  cat(sprintf("   2003 price: %.1f minutes | 2009 price: %.1f minutes\n", 
+              city$BigMac2003, city$BigMac2009))
+  cat(sprintf("   Absolute change: %+.1f minutes | Percent change: %+.1f%%\n",
+              city$Change, city$PercentChange))
+  cat(sprintf("   Standardized residual: %.2f\n", city$StdResid))
+  
+  # Explain why unusual
+  reasons <- c()
+  
+  # Check if extreme values
+  if(city$BigMac2003 > 100 || city$BigMac2009 > 120) {
+    reasons <- c(reasons, "EXTREME HIGH PRICES in one or both years")
+  }
+  
+  # Check for large price changes
+  if(abs(city$PercentChange) > 50) {
+    if(city$PercentChange > 0) {
+      reasons <- c(reasons, sprintf("MASSIVE PRICE INCREASE (%.1f%% jump)", city$PercentChange))
+    } else {
+      reasons <- c(reasons, sprintf("MASSIVE PRICE DECREASE (%.1f%% drop)", city$PercentChange))
+    }
+  }
+  
+  # Check residual pattern
+  if(city$StdResid > 2) {
+    reasons <- c(reasons, "MUCH HIGHER than predicted by regression (positive outlier)")
+  } else if(city$StdResid < -2) {
+    reasons <- c(reasons, "MUCH LOWER than predicted by regression (negative outlier)")
+  }
+  
+  # Check if far from y=x line
+  if(city$BigMac2009 > city$BigMac2003 * 1.5) {
+    reasons <- c(reasons, "Price increased much more than typical 'no change' scenario")
+  } else if(city$BigMac2009 < city$BigMac2003 * 0.7) {
+    reasons <- c(reasons, "Price decreased significantly relative to 2003")
+  }
+  
+  cat("   Why unusual:\n")
+  for(r in reasons) {
+    cat(sprintf("   - %s\n", r))
+  }
+  cat("\n")
+}
 ```
 
 #### b. Give two reasons why fitting simple linear regression to the figure in this problem is not likely to be appropriate.
@@ -391,8 +461,288 @@ head(ftcollinstemp)
 
 a\. Draw a scatterplot of the response versus the predictor, and describe any pattern you might see in the plot.
 
+```{r}
+library(alr4)
+data(ftcollinstemp)
+```
+
+```{r}
+plot(ftcollinstemp$fall, ftcollinstemp$winter,
+     xlab = "Fall Temperature (°F)",
+     ylab = "Winter Temperature (°F)", 
+     main = "Ft. Collins: Winter vs Fall Temperature (1900-2010)",
+     pch = 19, cex = 1.2, col = "steelblue")
+
+# Add a lowess smooth to see pattern
+lines(lowess(ftcollinstemp$fall, ftcollinstemp$winter), 
+      col = "red", lwd = 2, lty = 2)
+```
+
+```{r}
+# Basic pattern analysis
+cat("\nPattern Description:\n")
+correlation <- cor(ftcollinstemp$fall, ftcollinstemp$winter)
+cat(sprintf("- Correlation coefficient: %.4f\n", correlation))
+
+if(abs(correlation) < 0.3) {
+  cat("- Relationship strength: WEAK\n")
+} else if(abs(correlation) < 0.7) {
+  cat("- Relationship strength: MODERATE\n")
+} else {
+  cat("- Relationship strength: STRONG\n")
+}
+
+if(correlation > 0) {
+  cat("- Direction: POSITIVE (warmer falls tend to associate with warmer winters)\n")
+} else {
+  cat("- Direction: NEGATIVE (warmer falls tend to associate with colder winters)\n")
+}
+
+cat("\nVisual Observations:\n")
+cat("- The scatter appears fairly random with considerable variability\n")
+cat("- There may be slight clustering but no strong linear pattern\n")
+cat("- Points are distributed across the range without clear trend\n")
+cat("- Suggests fall temperature may not be a strong predictor of winter temperature\n")
+```
+
 b\. Use statistical software to fit the regression of the response on the predictor. Add the fitted line to your graph. Test the slope to be 0 against a two-sided alternative, and summarize your results.
+
+```{r}
+# Fit the regression model
+model <- lm(winter ~ fall, data = ftcollinstemp)
+
+# Add fitted line to previous plot
+par(mfrow=c(1,1))
+plot(ftcollinstemp$fall, ftcollinstemp$winter,
+     xlab = "Fall Temperature (°F)",
+     ylab = "Winter Temperature (°F)", 
+     main = "Winter vs Fall Temperature with Regression Line",
+     pch = 19, cex = 1.2, col = "steelblue")
+abline(model, col = "red", lwd = 2)
+lines(lowess(ftcollinstemp$fall, ftcollinstemp$winter), 
+      col = "darkgreen", lwd = 2, lty = 2)
+legend("topleft", 
+       legend = c("OLS Regression", "Lowess Smooth"),
+       col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2))
+
+# Print regression results
+cat("\nRegression Output:\n")
+summary_model <- summary(model)
+print(summary_model)
+
+# Extract key values
+beta0 <- coef(model)[1]
+beta1 <- coef(model)[2]
+se_beta1 <- summary_model$coefficients[2, 2]
+t_stat <- summary_model$coefficients[2, 3]
+p_value <- summary_model$coefficients[2, 4]
+
+cat("\n--- Interpretation of Regression Equation ---\n")
+cat(sprintf("Fitted Model: Winter = %.3f + %.3f × Fall\n", beta0, beta1))
+cat(sprintf("\nIntercept (β₀): %.3f°F\n", beta0))
+cat("  - Estimated winter temperature when fall temperature is 0°F\n")
+cat("  - Not meaningful in practice (extrapolation beyond data range)\n")
+cat(sprintf("\nSlope (β₁): %.3f°F per °F\n", beta1))
+cat(sprintf("  - For each 1°F increase in fall temperature,\n"))
+cat(sprintf("    winter temperature is predicted to %s by %.3f°F\n", 
+            ifelse(beta1 > 0, "increase", "decrease"), abs(beta1)))
+
+cat("\n--- Hypothesis Test for Slope ---\n")
+cat("H₀: β₁ = 0 (Fall temperature has no linear relationship with winter temperature)\n")
+cat("Hₐ: β₁ ≠ 0 (Fall temperature has a linear relationship with winter temperature)\n")
+cat(sprintf("\nTest statistic: t = %.4f\n", t_stat))
+cat(sprintf("P-value: %.4f\n", p_value))
+cat(sprintf("Significance level: α = 0.05\n"))
+
+if(p_value < 0.05) {
+  cat(sprintf("\n*** CONCLUSION: REJECT H₀ (p = %.4f < 0.05) ***\n", p_value))
+  cat("There IS statistically significant evidence that fall temperature\n")
+  cat("is linearly related to winter temperature.\n")
+} else {
+  cat(sprintf("\n*** CONCLUSION: FAIL TO REJECT H₀ (p = %.4f > 0.05) ***\n", p_value))
+  cat("There is NO statistically significant evidence that fall temperature\n")
+  cat("predicts winter temperature.\n")
+}
+
+# Confidence interval for slope
+conf_int <- confint(model, level = 0.95)
+cat(sprintf("\n95%% Confidence Interval for β₁: [%.4f, %.4f]\n", 
+            conf_int[2,1], conf_int[2,2]))
+```
 
 c\. Compute or obtain from your computer output the value of the variability in winter explained by fall and explain what this means.
 
+```{r}
+r_squared <- summary_model$r.squared
+adj_r_squared <- summary_model$adj.r.squared
+
+cat(sprintf("R² (Coefficient of Determination): %.4f\n", r_squared))
+cat(sprintf("Adjusted R²: %.4f\n", adj_r_squared))
+
+cat("\n--- Interpretation of R² ---\n")
+cat(sprintf("%.2f%% of the variability in WINTER temperature\n", r_squared * 100))
+cat("is explained by the linear relationship with FALL temperature.\n")
+cat(sprintf("\nThis means that %.2f%% of the variation remains UNEXPLAINED\n", 
+            (1 - r_squared) * 100))
+cat("by fall temperature alone.\n")
+
+if(r_squared < 0.10) {
+  cat("\n→ Fall temperature explains VERY LITTLE of winter temperature variation\n")
+  cat("→ Other factors are much more important for predicting winter temperatures\n")
+} else if(r_squared < 0.30) {
+  cat("\n→ Fall temperature explains a SMALL portion of winter temperature variation\n")
+  cat("→ Many other factors influence winter temperatures\n")
+} else if(r_squared < 0.50) {
+  cat("\n→ Fall temperature explains a MODERATE portion of winter temperature variation\n")
+} else {
+  cat("\n→ Fall temperature explains a LARGE portion of winter temperature variation\n")
+}
+
+cat("\nPractical Interpretation:\n")
+cat("- Fall temperatures have limited predictive power for winter temperatures\n")
+cat("- Weather patterns change substantially between seasons\n")
+cat("- Other factors (e.g., winter-specific weather patterns, climate oscillations)\n")
+cat("  play a much larger role in determining winter temperatures\n")
+```
+
 d\. Divide the data into 2 time periods, an early period from 1900 to 1989, and a late period from 1990 to 2010. You can do this using the variable year in the data file. Are the results different in the two time periods?
+
+```{r}
+# Create time period indicator
+ftcollinstemp$period <- ifelse(ftcollinstemp$year < 1990, "Early (1900-1989)", 
+                                "Late (1990-2010)")
+
+# Subset data
+early_data <- subset(ftcollinstemp, year < 1990)
+late_data <- subset(ftcollinstemp, year >= 1990)
+
+cat(sprintf("Early period (1900-1989): n = %d observations\n", nrow(early_data)))
+cat(sprintf("Late period (1990-2010): n = %d observations\n", nrow(late_data)))
+
+# Fit separate models
+model_early <- lm(winter ~ fall, data = early_data)
+model_late <- lm(winter ~ fall, data = late_data)
+
+# Create comparison plot
+par(mfrow=c(1,2))
+
+# Early period plot
+plot(early_data$fall, early_data$winter,
+     xlab = "Fall Temperature (°F)",
+     ylab = "Winter Temperature (°F)", 
+     main = "Early Period (1900-1989)",
+     pch = 19, cex = 1.2, col = "blue",
+     xlim = range(ftcollinstemp$fall),
+     ylim = range(ftcollinstemp$winter))
+abline(model_early, col = "red", lwd = 2)
+legend("topleft", 
+       legend = c(sprintf("y = %.2f + %.2fx", coef(model_early)[1], coef(model_early)[2]),
+                  sprintf("R² = %.3f", summary(model_early)$r.squared),
+                  sprintf("p = %.4f", summary(model_early)$coefficients[2,4])),
+       bty = "n", cex = 0.9)
+# Late period plot
+plot(late_data$fall, late_data$winter,
+     xlab = "Fall Temperature (°F)",
+     ylab = "Winter Temperature (°F)", 
+     main = "Late Period (1990-2010)",
+     pch = 19, cex = 1.2, col = "darkgreen",
+     xlim = range(ftcollinstemp$fall),
+     ylim = range(ftcollinstemp$winter))
+abline(model_late, col = "red", lwd = 2)
+legend("topleft", 
+       legend = c(sprintf("y = %.2f + %.2fx", coef(model_late)[1], coef(model_late)[2]),
+                  sprintf("R² = %.3f", summary(model_late)$r.squared),
+                  sprintf("p = %.4f", summary(model_late)$coefficients[2,4])),
+       bty = "n", cex = 0.9)
+```
+
+```{r}
+# Comparison table
+cat("\n--- Comparison of Results by Time Period ---\n\n")
+comparison <- data.frame(
+  Period = c("Early (1900-1989)", "Late (1990-2010)", "Full (1900-2010)"),
+  N = c(nrow(early_data), nrow(late_data), nrow(ftcollinstemp)),
+  Intercept = c(coef(model_early)[1], coef(model_late)[1], coef(model)[1]),
+  Slope = c(coef(model_early)[2], coef(model_late)[2], coef(model)[2]),
+  R_squared = c(summary(model_early)$r.squared, 
+                summary(model_late)$r.squared, 
+                summary(model)$r.squared),
+  P_value = c(summary(model_early)$coefficients[2,4],
+              summary(model_late)$coefficients[2,4],
+              summary(model)$coefficients[2,4])
+)
+
+print(comparison)
+```
+
+```{r}
+cat("\n--- Detailed Summary by Period ---\n")
+cat("\nEARLY PERIOD (1900-1989):\n")
+print(summary(model_early))
+
+cat("\n\nLATE PERIOD (1990-2010):\n")
+print(summary(model_late))
+```
+
+```{r}
+# Test for significant difference between periods
+cat("\n--- Are the Results Different Between Periods? ---\n")
+
+# Compare slopes
+slope_diff <- abs(coef(model_early)[2] - coef(model_late)[2])
+cat(sprintf("\nDifference in slopes: %.4f\n", slope_diff))
+
+# Compare R-squared
+r2_diff <- abs(summary(model_early)$r.squared - summary(model_late)$r.squared)
+cat(sprintf("Difference in R²: %.4f\n", r2_diff))
+
+# Compare significance
+early_sig <- summary(model_early)$coefficients[2,4] < 0.05
+late_sig <- summary(model_late)$coefficients[2,4] < 0.05
+
+cat("\n--- Key Differences ---\n")
+cat(sprintf("Early period slope: %.4f (p = %.4f) - %s\n", 
+            coef(model_early)[2], 
+            summary(model_early)$coefficients[2,4],
+            ifelse(early_sig, "SIGNIFICANT", "NOT SIGNIFICANT")))
+cat(sprintf("Late period slope: %.4f (p = %.4f) - %s\n", 
+            coef(model_late)[2], 
+            summary(model_late)$coefficients[2,4],
+            ifelse(late_sig, "SIGNIFICANT", "NOT SIGNIFICANT")))
+
+cat(sprintf("\nEarly period R²: %.4f (%.1f%% variance explained)\n", 
+            summary(model_early)$r.squared,
+            summary(model_early)$r.squared * 100))
+cat(sprintf("Late period R²: %.4f (%.1f%% variance explained)\n", 
+            summary(model_late)$r.squared,
+            summary(model_late)$r.squared * 100))
+```
+
+```{r}
+cat("\n--- Overall Interpretation ---\n")
+if(early_sig != late_sig) {
+  cat("The STATISTICAL SIGNIFICANCE differs between periods!\n")
+} else if(early_sig && late_sig) {
+  cat("Both periods show statistically significant relationships,\n")
+  cat("but the strength may differ.\n")
+} else {
+  cat("Neither period shows a statistically significant relationship.\n")
+}
+
+if(abs(r2_diff) > 0.05) {
+  cat("The predictive power (R²) differs notably between periods.\n")
+} else {
+  cat("The predictive power (R²) is similar between periods.\n")
+}
+
+# Temperature trends
+cat("\n--- Temperature Trends ---\n")
+cat(sprintf("Mean fall temp - Early: %.2f°F, Late: %.2f°F\n",
+            mean(early_data$fall), mean(late_data$fall)))
+cat(sprintf("Mean winter temp - Early: %.2f°F, Late: %.2f°F\n",
+            mean(early_data$winter), mean(late_data$winter)))
+cat(sprintf("Change in fall temp: %+.2f°F\n", 
+            mean(late_data$fall) - mean(early_data$fall)))
+cat(sprintf("Change in winter temp: %+.2f°F\n", 
+            mean(late_data$winter) - mean(early_data$winter)))
+```
