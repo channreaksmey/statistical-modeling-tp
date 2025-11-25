@@ -1,0 +1,127 @@
+---
+title: "TP3"
+author: "Channreaksmey"
+format: html
+editor: visual
+---
+
+# TP3 - Multiple Linear Regression
+
+## Problem 1
+
+(Data file: water) For this problem, consider the regression problem with response BSAAM, and three predictors as regressors given by OPBPC, OPRC, and OPSLAKE.
+
+```{r}
+library(alr4)
+```
+
+```{r}
+data(water)
+head(water)
+```
+
+#### 1. Examine the scatterplot matrix drawn for these three regressors and the response. What should the correlation matrix look like (i.e., which correlations are large and positive, which are large and negative, and which are small?) Compute the correlation matrix to verify your results.
+
+```{r}
+# Select the variables of interest
+water_dt <- water[c("BSAAM", "OPBPC", "OPRC", "OPSLAKE")]
+
+# Create scatterplot matrix
+pairs(water_dt,
+      main = "Scatterplot Matrix: BSAAM vs Three Predictors",
+      pch = 19, 
+      col = "blue",
+      cex = 0.8)
+```
+
+## Expected Correlations:
+
+**Correlations with BSAAM (Response Variable):**
+
+Looking at the first row of scatterplots:
+
+1.  **BSAAM vs OPBPC**: **Large and Positive** - Shows a strong upward linear trend
+
+2.  **BSAAM vs OPRC**: **Large and Positive** - Shows a strong upward linear trend
+
+3.  **BSAAM vs OPSLAKE**: **Large and Positive** - Shows a strong upward linear trend
+
+### **Correlations Among Predictors:**
+
+Looking at the lower triangle of the matrix:
+
+1.  **OPBPC vs OPRC**: **Large and Positive** - Shows a strong upward linear relationship
+2.  **OPBPC vs OPSLAKE**: **Large and Positive** - Shows a strong upward linear relationship
+3.  **OPRC vs OPSLAKE**: **Large and Positive** - Shows a strong upward linear relationship
+
+**All correlations should be large and positive.** Every scatterplot in the matrix shows a clear positive linear pattern with points clustering tightly around an upward-sloping line. This indicates:
+
+-   All three predictors (OPBPC, OPRC, OPSLAKE) are strongly positively correlated with the response (BSAAM)
+
+-   All three predictors are also strongly positively correlated with each other, which suggests potential **multicollinearity** in the regression model
+
+Now run the correlation matrix computation in R to verify these observations numerically. You should expect to see correlation coefficients close to +1 (perhaps in the range of 0.85 to 0.99) for all pairs of variables.
+
+```{r}
+cor_matrix <- cor(water_dt)
+cor_matrix
+```
+
+#### 2. Get the regression summary for the regression of BSAAM on these three regressors. Explain what the "t-value" columns of your output means.
+
+```{r}
+# Fit the regression model
+model <- lm(BSAAM ~ OPBPC + OPRC + OPSLAKE, data = water)
+
+# Display regression summary
+summary_model <- summary(model)
+print(summary_model)
+```
+
+### **What the "t value" column means:**
+
+The **t-value** (or t-statistic) tests whether each regression coefficient is significantly different from zero, holding all other predictors constant in the model.
+
+**Formula:**
+
+```         
+t-value = (Estimated Coefficient - 0) / Standard Error
+```
+
+This tests the null hypothesis: **H₀: β_1 = 0** (the predictor has no linear effect on the response after accounting for other predictors)
+
+### **Interpretation for Each Coefficient:**
+
+1.  **Intercept: t = 6.485**
+
+    -   Very large t-value with p \< 0.001 (highly significant \*\*\*)
+
+    -   Strong evidence that the intercept is significantly different from zero
+
+2.  **OPBPC: t = 0.081**
+
+    -   Very small t-value (close to 0) with p = 0.936 (not significant)
+
+    -   **Interpretation**: After accounting for OPRC and OPSLAKE, OPBPC does not add significant predictive value to the model
+
+    -   Despite OPBPC being strongly correlated with BSAAM (from the scatterplot), it becomes non-significant in the multiple regression due to **multicollinearity** with the other predictors
+
+3.  **OPRC: t = 2.886**
+
+    -   Moderate t-value with p = 0.006 (significant \*\*)
+
+    -   Strong evidence that OPRC has a significant positive effect on BSAAM, holding OPBPC and OPSLAKE constant
+
+    -   For each unit increase in OPRC, BSAAM increases by approximately 1867.46 units (on average)
+
+4.  **OPSLAKE: t = 3.050**
+
+    -   Moderate t-value with p = 0.004 (significant \*\*)
+
+    -   Strong evidence that OPSLAKE has a significant positive effect on BSAAM, holding OPBPC and OPRC constant
+
+    -   For each unit increase in OPSLAKE, BSAAM increases by approximately 2353.96 units (on average)
+
+### **Key Insight:**
+
+The large t-values (in absolute value) generally indicate **statistical significance**. A common rule of thumb is that \|t\| \> 2 suggests significance at approximately the 5% level. The associated **p-value** (Pr(\>\|t\|)) gives the exact probability of observing such an extreme t-value if the true coefficient were actually zero. Here, OPRC and OPSLAKE are significant predictors, while OPBPC is not, likely due to multicollinearity among the predictors.

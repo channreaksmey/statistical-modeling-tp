@@ -131,6 +131,7 @@ legend("bottomright", legend=c("ols", "y=x"), lty=2:1, cex=0.6)
 #### b. Suppose we start with a proposed model
 
 #### $$E(y|x)=\gamma_0x^{\beta_1}$$
+
 This is a common model in many areas of study. Examples include allometry (Gould, 1966), where x could represent the size of one body characteristic such as total weight and y represents some other body characteristic, such as brain weight, psychophysics (Stevens, 1966), in which x is a physical stimulus and y is a psychological response to it, or in economics, where x could represent inputs and y outputs, where this relationship is often called a Cobb-Douglas production function (Greene, 2003).
 
 #### If we take the logs of both sides of the last equation, we get
@@ -449,6 +450,7 @@ cat(sprintf("Log scale R²: %.4f\n", summary(fit_log)$r.squared))
 -   Prices tend to change proportionally rather than additively
 
 #### 
+
 Problem 5
 
 **Ft. Collins temperature data** (Data file: \ftcollinstemp) The data file gives the mean temperature in the \fall of each year, defined as September 1 to November 30, and the mean temperature in the following \winter, defined as December 1 to the end of February in the following calendar year, in degrees Fahrenheit, for Ft. Collins, CO (Colorado Climate Center, 2012). These data cover the time period from 1900 to 2010. The question of interest is: Does the average \fall temperature predict the average \winter temperature?
