@@ -1,0 +1,178 @@
+---
+title: "TD3-RA"
+author: "Rith"
+format: html
+editor: visual
+---
+
+## Problem 4
+
+Cakes (Data file: cakes) Oehlert (2000) provides data from a small experiment with n = 14 observations on baking packaged cake mixes. Two factors, X1 = backing time minutes and X2 = baking temperature in degrees F, were varied in the experiment. The response Y was the average palatability score of four cakes bakes at baked at a given combination of (X1,X2), with higher values desirable.
+
+```{r}
+library(alr4)
+data(cakes)
+
+head(cakes)
+```
+
+Suppose we have a model:
+
+$$
+E(Y|X_1=x_1,X_2=x_2)=\beta_0+\beta_1x_1+\beta_2x_2+\beta_3x_1 ^2+\beta_4x_2 ^2+\beta_5x_1x_2
+$$
+
+1.  Fit the model and verify that the significance levels for the quadratic terms and interaction are all less than 0.005. When fitting the polynomials, tests concerning main effects in models that include a quadratic are generally not of much interest.
+
+```{r}
+cakes$X1sq <- cakes$X1^2
+cakes$X2sq <- cakes$X2^2
+cakes$X1X2 <- cakes$X1 * cakes$X2
+```
+
+```{r}
+model1 <- lm(Y ~ X1 + X2 + X1sq + X2sq + X1X2, data = cakes)
+summary(model1)
+```
+
+------------------------------------------------------------------------
+
+## Problem 9
+
+In this exercise, we will predict the number of applications received using the other variables in the College data set.
+
+1.  Split the data set into a training set and a test set.
+
+```{r}
+# Library
+library(glmnet)
+library(pls)
+library(caret)
+```
+
+```{r}
+data <- read.csv("datasets/college_data.csv")
+data
+```
+
+```{r}
+train_id <- sample(1:nrow(data), nrow(data)/2)
+
+train <- data[train_id, ]
+test  <- data[-train_id, ]
+```
+
+```{r}
+y_test <- test$Apps
+y_test
+```
+
+2.  Fit a linear model using least squares on the training set, and report the test error obtained.
+
+```{r}
+lm_fit <- lm(Apps ~ ., data = train)
+
+lm_pred <- predict(lm_fit, test)
+
+lm_test_error <- mean((lm_pred - y_test)^2)
+lm_test_error
+```
+
+3.  Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+```{r}
+x_train <- model.matrix(Apps ~ ., train)[, -1]
+x_test  <- model.matrix(Apps ~ ., test)[, -1]
+
+y_train <- train$Apps
+
+set.seed(1)
+cv_ridge <- cv.glmnet(x_train, y_train, alpha = 0)
+
+best_lambda_ridge <- cv_ridge$lambda.min
+best_lambda_ridge
+
+ridge_pred <- predict(cv_ridge, s = best_lambda_ridge, newx = x_test)
+
+ridge_test_error <- mean((ridge_pred - y_test)^2)
+ridge_test_error
+```
+
+4.  Fit a lasso model on the training set, with λchosen by cross validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+
+```{r}
+set.seed(1)
+cv_lasso <- cv.glmnet(x_train, y_train, alpha = 1)
+
+best_lambda_lasso <- cv_lasso$lambda.min
+best_lambda_lasso
+
+lasso_pred <- predict(cv_lasso, s = best_lambda_lasso, newx = x_test)
+
+lasso_test_error <- mean((lasso_pred - y_test)^2)
+lasso_test_error
+```
+
+```{r}
+lasso_coef <- predict(cv_lasso, s = best_lambda_lasso, type = "coefficients")
+sum(lasso_coef != 0)
+```
+
+5.  Fit a PCR model on the training set, with $M$ chosen by cross validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+set.seed(1)
+pcr_fit <- pcr(Apps ~ ., data = train, scale = TRUE, validation = "CV")
+
+validationplot(pcr_fit, val.type = "MSEP")
+
+# Choose M that minimizes CV error
+pcr_M <- which.min(pcr_fit$validation$PRESS)
+pcr_M
+```
+
+```{r}
+pcr_pred <- predict(pcr_fit, test, ncomp = pcr_M)
+
+pcr_test_error <- mean((pcr_pred - y_test)^2)
+pcr_test_error
+```
+
+6.  Fit a PLS model on the training set, with M chosen by cross validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+set.seed(1)
+pls_fit <- plsr(Apps ~ ., data = train, scale = TRUE, validation = "CV")
+
+validationplot(pls_fit, val.type = "MSEP")
+
+pls_M <- which.min(pls_fit$validation$PRESS)
+pls_M
+```
+
+```{r}
+pls_pred <- predict(pls_fit, test, ncomp = pls_M)
+
+pls_test_error <- mean((pls_pred - y_test)^2)
+pls_test_error
+```
+
+7.  Comment on the results obtained. How accurately can we predict the number of college applications received? Is there much difference among the test errors resulting from these five approaches?
+
+```{r}
+data.frame(
+  Model = c("Linear Regression", "Ridge", "Lasso", "PCR", "PLS"),
+  Test_MSE = c(
+    lm_test_error,
+    ridge_test_error,
+    lasso_test_error,
+    pcr_test_error,
+    pls_test_error
+  )
+)
+```
+
+Comment:\
+Overall, there is **no substantial difference** among the test errors of the five approaches. Ridge regression provides the best predictive performance, while the remaining methods yield comparable results.
+
+------------------------------------------------------------------------
