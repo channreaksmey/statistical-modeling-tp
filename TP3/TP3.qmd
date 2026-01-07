@@ -34,7 +34,7 @@ pairs(water_dt,
       cex = 0.8)
 ```
 
-## Expected Correlations:
+**Expected Correlations:**
 
 **Correlations with BSAAM (Response Variable):**
 
@@ -46,7 +46,7 @@ Looking at the first row of scatterplots:
 
 3.  **BSAAM vs OPSLAKE**: **Large and Positive** - Shows a strong upward linear trend
 
-### **Correlations Among Predictors:**
+**Correlations Among Predictors:**
 
 Looking at the lower triangle of the matrix:
 
@@ -67,7 +67,7 @@ cor_matrix <- cor(water_dt)
 cor_matrix
 ```
 
-#### 2. Get the regression summary for the regression of BSAAM on these three regressors. Explain what the "t-value" columns of your output means.
+#### 2. Get the regression summary for the regression of BSAAM on these three regressors. Explain what the "p-value" columns of your output means.
 
 ```{r}
 # Fit the regression model
@@ -78,7 +78,7 @@ summary_model <- summary(model)
 print(summary_model)
 ```
 
-### **What the "t value" column means:**
+**What the "t value" column means:**
 
 The **t-value** (or t-statistic) tests whether each regression coefficient is significantly different from zero, holding all other predictors constant in the model.
 
@@ -90,7 +90,7 @@ t-value = (Estimated Coefficient - 0) / Standard Error
 
 This tests the null hypothesis: **H₀: β_1 = 0** (the predictor has no linear effect on the response after accounting for other predictors)
 
-### **Interpretation for Each Coefficient:**
+**Interpretation for Each Coefficient:**
 
 1.  **Intercept: t = 6.485**
 
@@ -122,6 +122,2623 @@ This tests the null hypothesis: **H₀: β_1 = 0** (the predictor has no linear 
 
     -   For each unit increase in OPSLAKE, BSAAM increases by approximately 2353.96 units (on average)
 
-### **Key Insight:**
+**Key Insight:**
 
 The large t-values (in absolute value) generally indicate **statistical significance**. A common rule of thumb is that \|t\| \> 2 suggests significance at approximately the 5% level. The associated **p-value** (Pr(\>\|t\|)) gives the exact probability of observing such an extreme t-value if the true coefficient were actually zero. Here, OPRC and OPSLAKE are significant predictors, while OPBPC is not, likely due to multicollinearity among the predictors.
+
+## Problem 2
+
+Berkeley Guidance Study (Data file: BGSgirls) Data from the Berkeley Guidance Study on the growth of boys and girls. We will view body mass index at age 18 BMI18, as the response, and weights in kilogram at ages 2, 9, and 18, WT2, WT9, and WT18 as predictor.
+
+```{r}
+library(alr4)
+data("BGSgirls")
+head(BGSgirls)
+```
+
+#### 1. Obtain the scatterplot matrix for these four variables. Define which predictor variable has the strongest relationship with BMI18 and what can you say about it. Is transformation neccessary in this case?
+
+```{r}
+# Select the variables of interest
+vars <- BGSgirls[, c("BMI18", "WT2", "WT9", "WT18")]
+
+pairs(vars,
+      main = "Scatterplot Matrix: BMI18 vs Weight Variables")
+```
+
+Looking at the first row of the scatterplot matrix (BMI18 vs. each predictor), **WT18 has the strongest relationship with BMI18**.
+
+-   **BMI18 vs WT2**: Shows a weak positive relationship with considerable scatter
+
+-   **BMI18 vs WT9**: Shows a moderate positive relationship with moderate scatter
+
+-   **BMI18 vs WT18**: Shows the **strongest positive linear relationship** with points following a clear upward trend and less scatter compared to the other two predictors
+
+**What can we say about this relationship?**
+
+1.  **It makes biological sense**: WT18 (weight at age 18) and BMI18 (BMI at age 18) are measured at the same time point. Since BMI is calculated as weight/height², it's directly influenced by weight at that age.
+
+2.  **Strong positive association**: As weight at age 18 increases, BMI at age 18 increases in a fairly consistent pattern.
+
+3.  **Linear pattern**: The relationship appears approximately linear without obvious curvature.
+
+**Is transformation necessary?**
+
+**No, transformation does not appear necessary** based on these scatterplots because:
+
+1.  **Linearity**: All three relationships (especially WT18) show reasonably linear patterns without major curvature
+
+2.  **No obvious heteroscedasticity**: The spread of points appears relatively constant across the range of predictor values
+
+3.  **No extreme outliers**: While there's natural variability, there are no severe outliers that would distort the analysis
+
+However, we should still examine **residual plots after fitting the regression model** to confirm that transformation isn't needed for meeting regression assumptions (constant variance, normality of errors).
+
+```{r}
+cat("Assessing whether transformation is needed for the regression model\n")
+cat("Model: BMI18 ~ WT2 + WT9 + WT18\n\n")
+
+# Fit the initial regression model
+model1 <- lm(BMI18 ~ WT2 + WT9 + WT18, data = BGSgirls)
+
+# Set up plotting area for 6 diagnostic plots
+par(mfrow = c(2, 3), mar = c(4, 4, 2, 1))
+
+# 1. Residuals vs Fitted Values
+plot(fitted(model1), residuals(model1),
+     xlab = "Fitted Values", ylab = "Residuals",
+     main = "Residuals vs Fitted",
+     pch = 19, col = "darkblue")
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+lines(lowess(fitted(model1), residuals(model1)), col = "green", lwd = 2)
+legend("topright", legend = c("Zero line", "Lowess smooth"), 
+       col = c("red", "green"), lty = c(2, 1), cex = 0.7)
+
+# 2. Normal Q-Q Plot
+qqnorm(residuals(model1), main = "Normal Q-Q Plot", 
+       pch = 19, col = "darkblue")
+qqline(residuals(model1), col = "red", lwd = 2)
+
+# 3. Scale-Location Plot (for homoscedasticity)
+plot(fitted(model1), sqrt(abs(rstandard(model1))),
+     xlab = "Fitted Values", ylab = "√|Standardized Residuals|",
+     main = "Scale-Location",
+     pch = 19, col = "darkblue")
+lines(lowess(fitted(model1), sqrt(abs(rstandard(model1)))), 
+      col = "red", lwd = 2)
+
+# 4. Residuals vs WT2
+plot(BGSgirls$WT2, residuals(model1),
+     xlab = "WT2 (Weight at Age 2)", ylab = "Residuals",
+     main = "Residuals vs WT2",
+     pch = 19, col = "darkblue")
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+lines(lowess(BGSgirls$WT2, residuals(model1)), col = "green", lwd = 2)
+
+# 5. Residuals vs WT9
+plot(BGSgirls$WT9, residuals(model1),
+     xlab = "WT9 (Weight at Age 9)", ylab = "Residuals",
+     main = "Residuals vs WT9",
+     pch = 19, col = "darkblue")
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+lines(lowess(BGSgirls$WT9, residuals(model1)), col = "green", lwd = 2)
+
+# 6. Residuals vs WT18
+plot(BGSgirls$WT18, residuals(model1),
+     xlab = "WT18 (Weight at Age 18)", ylab = "Residuals",
+     main = "Residuals vs WT18",
+     pch = 19, col = "darkblue")
+abline(h = 0, col = "red", lwd = 2, lty = 2)
+lines(lowess(BGSgirls$WT18, residuals(model1)), col = "green", lwd = 2)
+
+par(mfrow = c(1, 1))
+```
+
+**Analysis of Each Diagnostic Plot:**
+
+**1. Residuals vs Fitted (Top Left):**
+
+-   Shows relatively **random scatter** around the zero line
+
+-   No obvious funnel shape (variance appears fairly constant)
+
+-   The lowess smooth line shows a **slight upward curve** at higher fitted values, suggesting minor non-linearity
+
+-   Overall: Mostly acceptable, though not perfect
+
+**2. Normal Q-Q Plot (Top Middle):**
+
+-   Points follow the diagonal line **very closely**
+
+-   Both tails align well with the theoretical quantiles
+
+-   No S-curve or heavy-tail departure
+
+-   Overall: **Excellent** - residuals appear normally distributed
+
+**3. Scale-Location (Top Right):**
+
+-   Shows a **slight U-shaped pattern** with the red line
+
+-   Suggests some **mild heteroscedasticity** (variance may not be perfectly constant)
+
+-   The variance appears slightly lower in the middle range and higher at the extremes
+
+-   Overall: Minor concern, but not severe
+
+**4. Residuals vs WT2 (Bottom Left):**
+
+-   Fairly **random scatter** around zero
+
+-   Lowess line is relatively flat
+
+-   Overall: Acceptable
+
+**5. Residuals vs WT9 (Bottom Middle):**
+
+-   **Random scatter** with no clear pattern
+
+-   Lowess line is nearly horizontal
+
+-   Overall: Good
+
+**6. Residuals vs WT18 (Bottom Right):**
+
+-   Lowess line shows an **upward curve** at higher values
+
+-   Suggests the relationship might not be perfectly linear at extreme values
+
+-   Overall: Minor non-linearity concern
+
+**FINAL CONCLUSION: Transformation is NOT Strictly Necessary**
+
+Justification:
+
+**Strengths:**
+
+1.  **Excellent normality** - Q-Q plot is nearly perfect
+
+2.  **No severe heteroscedasticity** - variance is relatively stable
+
+3.  **Generally random patterns** - no major systematic issues
+
+4.  **Reasonable linearity** - relationships are predominantly linear
+
+**Minor Issues:**
+
+1.  Slight non-linearity at extreme values (visible in Residuals vs Fitted and vs WT18)
+
+2.  Mild heteroscedasticity (U-shape in Scale-Location)
+
+**Recommendation:**
+
+**Transformation is NOT required** because:
+
+-   The violations of assumptions are **minor and not severe**
+
+-   The model assumptions are **adequately satisfied** for practical purposes
+
+-   Normality is excellent, which is most important for inference
+
+-   Any transformation might not substantially improve the model and could complicate interpretation
+
+**However**, the more important issue here is **multicollinearity** (which we'll see in Questions 2-3), not the need for transformation. The orthogonal polynomial transformation in Question 4 addresses the multicollinearity problem, not assumption violations.
+
+#### 2. Comment on the correlation among the predictor variables.
+
+```{r}
+# Correlation matrix for predictors only
+library(corrplot)
+correlations <- cor(vars, use = "complete.obs")
+pred_corr <- correlations[2:4, 2:4]
+
+# Visualize correlations
+corrplot(pred_corr, method = "number", type = "upper", 
+         title = "Correlation Among Predictors",
+         mar = c(0,0,2,0))
+```
+
+**Correlation Matrix Summary:**
+
+The correlation matrix reveals the following relationships among the three predictor variables:
+
+-   **WT2 and WT9**: r = 0.69 (strong positive correlation)
+
+-   **WT2 and WT18**: r = 0.39 (moderate positive correlation)
+
+-   **WT9 and WT18**: r = 0.69 (strong positive correlation)
+
+**Comments on Predictor Correlations:**
+
+1.  **High correlations indicate multicollinearity**: All three predictors are positively correlated with each other, with correlations ranging from 0.39 to 0.69. This is substantial and indicates the presence of multicollinearity.
+
+2.  **Biological explanation**: These high correlations make sense because:
+
+    -   They all measure the same characteristic (weight) for the same individuals
+
+    -   Children who are heavier at age 2 tend to remain heavier at ages 9 and 18
+
+    -   Weight measurements track together over time due to genetic, metabolic, and lifestyle factors
+
+3.  **Strongest correlations**:
+
+    -   WT2-WT9 (r = 0.69) and WT9-WT18 (r = 0.69) show the strongest correlations
+
+    -   WT2-WT18 (r = 0.39) is somewhat weaker, likely because there's more time (16 years) between these measurements, allowing for more individual variation in growth patterns
+
+4.  **Implications for regression**:
+
+    -   This multicollinearity will make it difficult to separate the individual effects of each weight measurement on BMI18
+
+    -   Coefficient estimates may be unstable with large standard errors
+
+    -   Signs of coefficients might be counterintuitive or unexpected
+
+    -   This explains why we'll need the orthogonal polynomial transformation in Question 4 to address this issue
+
+```{r}
+# Calculate VIF
+vif_values <- vif(model1)
+
+cat("VIF values for each predictor:\n")
+cat("------------------------------\n")
+for(i in 1:length(vif_values)) {
+  cat(sprintf("%-6s: VIF = %7.3f\n", names(vif_values)[i], vif_values[i]))
+}
+```
+
+The predictor variables (WT2, WT9, WT18) show **moderate positive correlations** with each other:
+
+1.  **VIF values range from 1.98 to 3.21** - all within acceptable limits (\< 5)
+
+2.  **WT9 has the highest VIF (3.21)**, indicating it's most strongly related to the other predictors
+
+3.  **49-69% of each predictor's variance** can be explained by the other two predictors
+
+4.  **Standard errors are inflated by 41-79%** due to multicollinearity
+
+5.  While **not severe**, this multicollinearity contributes to the unexpected signs and non-significance seen in Question 3
+
+6.  The **orthogonal transformation in Question 4** will further reduce multicollinearity and improve interpretability
+
+**Conclusion:** Multicollinearity is present at a moderate level but is **acceptable for analysis**. The correlations reflect the biological reality that weight measurements track together over time. However, the transformed model (Question 4) will provide clearer interpretations.
+
+#### 3. Obtain the summary table for the multiple linear regression with the three predictors. Interpret the $\beta_j$ coefficients obtained from the model. Do the results make sense?
+
+```{r}
+summary(model1)
+```
+
+**Summary Table Interpretation:**
+
+**Model:** BMI18 = 8.310 - 0.387(WT2) + 0.031(WT9) + 0.287(WT18)
+
+**Interpretation of β Coefficients:**
+
+**1. Intercept (β₀ = 8.310):**
+
+-   When WT2 = WT9 = WT18 = 0, the predicted BMI18 is 8.310
+
+-   Not practically meaningful (weights cannot be zero)
+
+-   Highly significant (p \< 0.001)
+
+**2. WT2 Coefficient (β₁ = -0.387):**
+
+-   **Interpretation:** Holding WT9 and WT18 constant, a 1 kg increase in weight at age 2 is associated with a **decrease** of 0.387 units in BMI18
+
+-   **Statistical significance:** p = 0.013 (significant at α = 0.05)
+
+-   **Sign:** NEGATIVE
+
+**3. WT9 Coefficient (β₂ = 0.031):**
+
+-   **Interpretation:** Holding WT2 and WT18 constant, a 1 kg increase in weight at age 9 is associated with an increase of 0.031 units in BMI18
+
+-   **Statistical significance:** p = 0.527 (NOT significant)
+
+-   **Sign:** Positive, but coefficient is very small and not significant
+
+-   **Meaning:** WT9 contributes almost nothing after accounting for WT2 and WT18
+
+**4. WT18 Coefficient (β₃ = 0.287):**
+
+-   **Interpretation:** Holding WT2 and WT9 constant, a 1 kg increase in weight at age 18 is associated with an increase of 0.287 units in BMI18
+
+-   **Statistical significance:** p \< 2×10⁻¹⁶ (extremely significant \*\*\*)
+
+-   **Sign:** POSITIVE
+
+-   **This makes biological sense** - higher weight at age 18 leads to higher BMI at age 18
+
+**Model Fit Statistics:**
+
+-   **R² = 0.7772:** The model explains 77.72% of the variation in BMI18
+
+-   **Adjusted R² = 0.767:** Adjusted for number of predictors (still very high)
+
+-   **F-statistic = 76.73, p \< 2.2×10⁻¹⁶:** The overall model is highly significant
+
+-   **Residual Standard Error = 1.333:** Average prediction error is about 1.33 BMI units
+
+**Do the Results Make Sense?**
+
+**NO, the results do NOT make sense!**
+
+Why the Results are Counterintuitive:
+
+**1. Negative coefficient for WT2:**
+
+-   We would expect that heavier babies grow into adults with higher BMI
+
+-   A **negative** relationship is biologically implausible
+
+-   It suggests that heavier 2-year-olds have **lower** BMI at age 18 (holding other weights constant)
+
+**2. Near-zero coefficient for WT9:**
+
+-   Weight at age 9 appears to have almost no effect
+
+-   This seems unlikely given that childhood weight typically predicts adult BMI
+
+**3. Only WT18 has the expected positive relationship:**
+
+-   This is the only coefficient that makes intuitive sense
+
+-   Higher weight at age 18 → higher BMI at age 18 (direct relationship)
+
+**What's Causing These Strange Results?**
+
+**MULTICOLLINEARITY** is the culprit!
+
+**Evidence:**
+
+1.  **High correlations among predictors** (from Question 2):
+
+    -   WT2-WT9: r = 0.69
+
+    -   WT9-WT18: r = 0.69
+
+    -   WT2-WT18: r = 0.39
+
+2.  **What multicollinearity does:**
+
+    -   Makes it impossible to isolate the individual effect of each predictor
+
+    -   Causes unstable coefficient estimates with large standard errors
+
+    -   Leads to **unexpected signs** (like the negative WT2 coefficient)
+
+    -   Makes coefficients highly sensitive to small data changes
+
+3.  **The "holding other variables constant" interpretation breaks down:**
+
+    -   It's unrealistic to imagine someone heavy at age 2 but light at age 18
+
+    -   The predictors move together naturally, so controlling for one while varying another creates an artificial scenario
+
+    -   This is why the coefficients don't reflect real-world relationships
+
+**Conclusion:**
+
+While the **overall model fit is excellent** (R² = 0.78), the **individual coefficients are unreliable and misleading** due to severe multicollinearity. The negative sign for WT2 is a classic symptom of this problem.
+
+**This is exactly why Question 4 introduces the orthogonal polynomial transformation** - it creates uncorrelated predictors that yield interpretable, meaningful coefficients while maintaining the same predictive power.
+
+#### 4. The unexpected sign of coefficients may be due to the correlation between the regressors. This is the problem of multicollinearity. In this case, since all the three original regressors measure weight, combining them together is reasonable. Consider a set of linear transformations of the weight variables below:
+
+$$ave= (WT2 + WT9 + WT18)/3$$
+
+$$lin= WT18−WT2$$
+
+$$quad= WT2−2 ×WT9 + WT18$$
+
+Since the three weight variables are approximately equally spaced in time, these three variables correspond to the average weight, a linear component in time, and a quadratic component in time; see Oehlert (2000) or Kennedy and Gentle (1980), for example, for a discussion of orthogonal polynomials.
+
+Fit with these regressors using the girls in the Berkeley Guidance Study data and compare with the results in Problem 4.3.
+
+```{r}
+# Create transformed variables
+BGSgirls$ave <- (BGSgirls$WT2 + BGSgirls$WT9 + BGSgirls$WT18) / 3
+BGSgirls$lin <- BGSgirls$WT18 - BGSgirls$WT2
+BGSgirls$quad <- BGSgirls$WT2 - 2*BGSgirls$WT9 + BGSgirls$WT18
+
+# Check correlations among transformed variables
+trans_vars <- BGSgirls[, c("ave", "lin", "quad")]
+trans_corr <- cor(trans_vars, use = "complete.obs")
+cat("\nCorrelations among transformed variables:\n")
+print(round(trans_corr, 4))
+
+cat("\nNote: The transformed variables are approximately orthogonal (uncorrelated)!")
+cat("\nThis eliminates the multicollinearity problem.\n")
+
+# Fit model with transformed variables
+model2 <- lm(BMI18 ~ ave + lin + quad, data = BGSgirls)
+summary(model1)
+summary(model2)
+
+```
+
+**Transformed Variables:**
+
+The three new predictors are:
+
+-   **ave** = (WT2 + WT9 + WT18)/3 → Average weight across all three ages
+
+-   **lin** = WT18 - WT2 → Linear component (weight gain from age 2 to 18)
+
+-   **quad** = WT2 - 2×WT9 + WT18 → Quadratic component (curvature in growth pattern)
+
+**Assessment of Orthogonality:**
+
+**IMPORTANT OBSERVATION:** The transformed variables are **NOT perfectly orthogonal (uncorrelated)**!
+
+-   **ave and lin:** r = 0.8711 (very high correlation)
+
+-   **ave and quad:** r = -0.1946 (low correlation) ✓
+
+-   **lin and quad:** r = 0.2378 (low-moderate correlation) ✓
+
+**Why aren't they orthogonal?**
+
+-   Orthogonal polynomials require **equally spaced** time points
+
+-   Ages 2, 9, and 18 are **not equally spaced**:
+
+    -   Gap 1: 9 - 2 = 7 years
+
+    -   Gap 2: 18 - 9 = 9 years
+
+-   The formulas given assume equal spacing, so they don't produce perfectly uncorrelated variables in this case
+
+-   Despite this, the transformation still reduces multicollinearity substantially compared to the original model
+
+**COMPARISON 1: WHAT'S THE SAME**
+
+Overall Model Fit Statistics (IDENTICAL)
+
+```         
+StatisticM1 (Original)M2 (Transformed)R²0.77720.7772Adjusted R²0.76700.7670Residual Std Error1.3331.333F-statistic76.7376.73p-value< 2.2e-16< 2.2e-16Degrees of Freedom6666
+```
+
+Residuals (IDENTICAL)
+
+```         
+        M1        M2
+Min     -3.1037   -3.1037
+1Q      -0.7432   -0.7432
+Median  -0.1240   -0.1240
+3Q      0.8320     0.8320
+Max     4.3485    4.3485
+```
+
+**✓ Intercept (IDENTICAL)**
+
+Both models: β₀ = 8.310 (SE = 1.655, t = 5.020, p \< 0.001)
+
+**Why are these the same?** Both models span the **same 2-dimensional predictor space**. They are just different **coordinate systems** describing the same underlying relationship. The transformations are linear combinations of the original variables, so they represent the same fitted plane.
+
+**COEFFICIENT SIGNS AND INTERPRETABILITY**
+
+**M1 (Original) - PROBLEMS:**
+
+**❌ WT2 = -0.387 (NEGATIVE and significant)**
+
+-   Interpretation: Higher weight at age 2 → Lower BMI at 18 (holding WT9, WT18 constant)
+
+-   **This is counterintuitive and biologically implausible!**
+
+-   Caused by multicollinearity
+
+**⚠️ WT9 = 0.031 (positive but NOT significant)**
+
+-   Interpretation: Weight at 9 has minimal effect
+
+-   Effect absorbed by other predictors due to collinearity
+
+**✓ WT18 = 0.287 (positive and highly significant)**
+
+-   Makes sense: heavier at 18 → higher BMI at 18
+
+-   But "holding WT2, WT9 constant" is an artificial scenario
+
+**M2 (Transformed) - IMPROVEMENTS:**
+
+**⚠️ ave = -0.068 (negative but NOT significant, p = 0.597)**
+
+-   Interpretation: Average weight across ages doesn't significantly predict BMI18
+
+-   Not significant, so the negative sign is not meaningful
+
+-   Likely due to high correlation with lin (r = 0.87)
+
+**✓✓✓ lin = 0.337 (positive and HIGHLY significant, p = 2.68e-05)**
+
+-   **This is the KEY finding!**
+
+-   Interpretation: Weight GAIN from age 2 to 18 strongly predicts BMI at 18
+
+-   For every 1 kg increase in weight gain, BMI18 increases by 0.337
+
+-   **Makes perfect biological sense**
+
+**⚠️ quad = -0.027 (negative but NOT significant, p = 0.499)**
+
+-   Interpretation: No significant quadratic (non-linear) growth component
+
+-   Growth pattern is predominantly linear
+
+-   Not significant, so can be ignored
+
+**STATISTICAL SIGNIFICANCE**
+
+M1 Significance Pattern:
+
+-   2 out of 3 predictors significant (WT2, WT18)
+
+-   But WT2 has wrong sign!
+
+-   WT9 not significant despite biological relevance
+
+M2 Significance Pattern:
+
+-   1 out of 3 predictors significant (lin only)
+
+-   **This is BETTER!** It identifies the single most important factor
+
+-   Clear, parsimonious interpretation
+
+**PRACTICAL INTERPRETATION**
+
+What M1 Tells Us (CONFUSING):
+
+-   "Heavier babies have lower adult BMI" ❌
+
+-   "Weight at 9 doesn't matter" ❌
+
+-   "Weight at 18 matters most" (partially true but incomplete)
+
+-   **Overall message: UNCLEAR and contradictory**
+
+What M2 Tells Us (CLEAR):
+
+-   "Average weight across ages doesn't predict adult BMI" ✓
+
+-   **"Weight GAIN from childhood to adolescence is the KEY predictor"** ✓✓✓
+
+-   "Growth trajectory is linear, not curved" ✓
+
+-   **Overall message: CLEAR and actionable!**
+
+**WHICH MODEL IS BETTER?**
+
+For Prediction: **BOTH ARE EQUAL**
+
+-   Identical R², predictions, and residuals
+
+-   Same explanatory power
+
+For Interpretation: **M2 IS VASTLY SUPERIOR**
+
+-   [x] Identifies weight gain as the key factor
+
+-   [x] Only one significant predictor (parsimonious)
+
+-   [x] Clear biological meaning
+
+-   [x] No counterintuitive signs
+
+-   [x] Actionable insights for public health
+
+Remaining Limitation:
+
+The transformation didn't achieve perfect orthogonality due to unequal time spacing (ave and lin are still correlated at r = 0.87). A truly orthogonal transformation would require adjusted coefficients based on the actual age spacing.
+
+## Problem 3
+
+(Data file: Transact) The data in this example consists of a sample of branches of a large Australian bank (Cunningham and Heathcote, 1989). Each branch makes transactions of two types, and for each of the branches we have recorded the number T1 of type 1 transactions and the number t2 of type 2 transactions. The response is time, the total minutes of labor used by the branch.
+
+```{r}
+data(Transact)
+
+Transact$a <- (Transact$t1 + Transact$t2)/2
+Transact$d <- Transact$t1 - Transact$t2
+head(Transact)
+```
+
+Define a = (t1 + t2)/2 to be the average transaction time, and d = t1 - t1, and fit the following four mean functions.
+
+i\. M1: $E(time|t1,t2) = β_{01} + β_{11}t1 + β_{21}t2$
+
+ii\. M2: $E(time|t1,t2) = β_{02} + β_{32}a + β_{42}d$
+
+iii\. M3: $E(time|t1,t2) = β_{03} + β_{23}t2 + β_{43}d$
+
+iv\. M4: $E(time|t1,t2) = β_{04} + β_{14}t1 + β_{24}t2 + \beta_{34}a + \beta_{44}d$
+
+```{r}
+# Model M1: Original predictors
+cat("--- MODEL M1: E(time|t1,t2) = β01 + β11*t1 + β21*t2 ---\n")
+M1 <- lm(time ~ t1 + t2, data = Transact)
+summary(M1)
+cat("\n")
+
+# Model M2: Transformed predictors only
+cat("--- MODEL M2: E(time|t1,t2) = β02 + β32*a + β42*d ---\n")
+M2 <- lm(time ~ a + d, data = Transact)
+summary(M2)
+cat("\n")
+
+# Model M3: Mixed predictors
+cat("--- MODEL M3: E(time|t1,t2) = β03 + β23*t2 + β43*d ---\n")
+M3 <- lm(time ~ t2 + d, data = Transact)
+summary(M3)
+cat("\n")
+
+# Model M4: All predictors (REDUNDANT)
+cat("--- MODEL M4: E(time|t1,t2) = β04 + β14*t1 + β24*t2 + β34*a + β44*d ---\n")
+M4 <- lm(time ~ t1 + t2 + a + d, data = Transact)
+summary(M4)
+cat("\n")
+```
+
+In the fit of M4, some of the coefficients estimates are labeled as “aliased (NA)” or else they are simply omitted. Explain what this means and why this happens.
+
+The coefficients for **a** and **d** are marked as **NA** with the message *"(2 not defined because of singularities)"*. This means:
+
+1.  **"Aliased"** = The variables are redundant and cannot be estimated
+
+2.  **"Singularities"** = Perfect multicollinearity exists in the design matrix
+
+3.  **R automatically drops** these variables to avoid computational problems
+
+**Why Does This Happen?**
+
+Model M4 attempts to include **all four variables**: t1, t2, a, and d
+
+However, these variables have **perfect linear dependencies**:
+
+**Given the definitions:**
+
+-   **a = (t1 + t2)/2** (average of the two transaction types)
+
+-   **d = t1 - t2** (difference between transaction types)
+
+**We can derive exact relationships:**
+
+From these two equations, we can solve for t1 and t2:
+
+-   **t1 = a + d/2**
+
+-   **t2 = a - d/2**
+
+This means:
+
+-   If we know **a** and **d**, we can perfectly calculate **t1** and **t2**
+
+-   If we know **t1** and **t2**, we can perfectly calculate **a** and **d**
+
+**Mathematical Explanation**
+
+The model matrix for M4 has 5 columns: **\[1, t1, t2, a, d\]**
+
+But these columns are **linearly dependent**:
+
+-   Column **a** = 0.5 × Column **t1** + 0.5 × Column **t2**
+
+-   Column **d** = 1.0 × Column **t1** - 1.0 × Column **t2**
+
+**Result:** The design matrix is **not full rank**
+
+-   We have 5 columns but only **3 are linearly independent** (intercept, t1, t2)
+
+-   The matrix is **singular** (non-invertible)
+
+-   We cannot solve for unique coefficient estimates for all 5 parameters
+
+**Why R Drops a and d (Not t1 and t2)**
+
+R uses a **sequential algorithm** to build the model:
+
+1.  First, it includes the **intercept**
+
+2.  Then it includes **t1** (linearly independent from intercept)
+
+3.  Then it includes **t2** (linearly independent from intercept and t1)
+
+4.  When it tries to add **a**, R detects that a can be written as a linear combination of t1 and t2 → **drops a**
+
+5.  When it tries to add **d**, R detects that d can be written as a linear combination of t1 and t2 → **drops d**
+
+The order matters! R keeps variables in the order they appear in the formula and drops later variables that are redundant.
+
+**Practical Implications**
+
+**What M4 actually fits:** Even though we specified `time ~ t1 + t2 + a + d`, R actually fits:
+
+-   **time \~ t1 + t2**
+
+This is **identical to M1**! Notice:
+
+-   Same coefficient estimates for t1 and t2
+
+-   Same standard errors
+
+-   Same t-values and p-values
+
+-   Same R², residual standard error, F-statistic
+
+**Key takeaway:** You cannot include more than **2 independent predictors** when working with just two original variables (t1 and t2), no matter how many transformations you create. Any additional variables will be redundant and aliased.
+
+**Summary**
+
+**"Aliased (NA)" means:**
+
+-   The variable is **perfectly predicted** by other variables already in the model
+
+-   Its coefficient **cannot be uniquely estimated**
+
+-   R automatically **removes it** to prevent computational errors
+
+**Why it happens:**
+
+-   **Perfect multicollinearity**: a = (t1 + t2)/2 and d = t1 - t2
+
+-   Only **2 dimensions of information** exist in the predictor space
+
+-   Attempting to fit 4 predictors with only 2 degrees of freedom is impossible
+
+-   The design matrix is **singular** (rank deficient)
+
+#### 2. What aspects of the fitted regressions are the same? What aspects are different?
+
+```{r}
+# Extract key statistics
+models <- list(M1 = M1, M2 = M2, M3 = M3, M4 = M4)
+
+comparison <- data.frame(
+  Model = c("M1", "M2", "M3", "M4"),
+  Predictors = c("t1, t2", "a, d", "t2, d", "t1, t2, a, d"),
+  R_squared = sapply(models, function(m) summary(m)$r.squared),
+  Adj_R_squared = sapply(models, function(m) summary(m)$adj.r.squared),
+  RSE = sapply(models, function(m) summary(m)$sigma),
+  F_statistic = sapply(models, function(m) summary(m)$fstatistic[1])
+)
+print(comparison)
+```
+
+Looking at the comparison table, **ALL fit statistics are IDENTICAL**: (r_squared, adjusted r_squared, rse, f_statistic)
+
+**WHAT IS DIFFERENT ACROSS THE MODELS?**
+
+The **individual coefficient estimates** are different:
+
+```         
+Model   Coefficients
+M1      t1 = 5.462, t2 = 2.035
+M2      a = 7.497, d = 1.714
+M3      t2 = 7.497, d = 5.462
+M4      t1 = 5.462, t2 = 2.035, a = NA, d = NA
+```
+
+**Additional differences:**
+
+1.  **Standard errors** of coefficients differ
+
+2.  **t-statistics** differ
+
+3.  **Individual p-values** differ (though all significant)
+
+4.  **Interpretation** of coefficients differs
+
+#### 3. Why is the estimate for t2 different in M1 and M3?
+
+**The t2 Coefficients:**
+
+From the model outputs:
+
+**Model M1:** `time ~ t1 + t2`
+
+-   **t2 coefficient = 2.03455**
+
+**Model M3:** `time ~ t2 + d`
+
+-   **t2 coefficient = 7.49660**
+
+The t2 coefficient in M3 is **much larger** (about 3.7 times larger) than in M1!
+
+**Why Are They Different?**
+
+The coefficients have **completely different interpretations** because they are "holding different things constant."
+
+**In Model M1: time \~ t1 + t2**
+
+**β₂ = 2.03455** means:
+
+-   The effect of t2 **holding t1 constant**
+
+-   *Interpretation*: "If t2 increases by 1 unit while t1 stays the same, time increases by 2.03 minutes"
+
+-   This measures the **unique effect of type 2 transactions alone**
+
+**In Model M3: time \~ t2 + d**
+
+**β₂ = 7.49660** means:
+
+-   The effect of t2 **holding d = (t1 - t2) constant**
+
+-   *Interpretation*: "If t2 increases by 1 unit while d stays constant, time increases by 7.50 minutes"
+
+**Key insight:** If d = t1 - t2 is held constant and t2 increases by 1, then **t1 must also increase by 1**!
+
+So the t2 coefficient in M3 actually measures: **"What happens when BOTH t1 and t2 increase by 1 unit together?"**
+
+**Intuitive Explanation**
+
+Think of it this way:
+
+**M1 asks:** "What is the effect of changing t2 **independently** from t1?"
+
+-   Answer: 2.035 minutes per transaction
+
+**M3 asks:** "What is the effect of changing t2 when t1 and t2 must **move together** (because d is fixed)?"
+
+-   Answer: 7.497 minutes per transaction
+
+-   This is the **combined effect** of both t1 and t2 increasing
+
+**Analogy:**
+
+-   M1 is like asking "How much does your right leg contribute to walking if your left leg stays still?"
+
+-   M3 is like asking "How much does your right leg contribute when both legs move together?" (Much more!)
+
+**Bottom line:** The t2 coefficient is different because it's answering a different question. In M1, it's the effect of t2 **alone**. In M3, it's the effect of t2 **plus** t1 moving together. Both are correct—they just have different interpretations based on what's being held constant!
+
+## Problem 4
+
+Cakes (Data file: `cakes`) Oehlert (2000) provides data from a small experiment with n = 14 observations on baking packaged cake mixes. Two factors, X1 = backing time minutes and X2 = baking temperature in degrees F, were varied in the experiment. The response Y was the average palatability score of four cakes bakes at baked at a given combination of (X1,X2), with higher values desirable.
+
+```{r}
+library(alr4)
+data(cakes)
+head(cakes)
+```
+
+Suppose we have a model:
+
+$$E(Y|X_1=x_1, X_2=x_2)=\beta_0+\beta_1x_1+\beta_2x_2+\beta_3x_1^2+\beta_4x_2^2+\beta_5x_1x_2$$
+
+#### 1. Fit the model and verify that the significance levels for the quadratics terms and interaction are all less than 0.005. When fitting the polynomials, tests concerning main effects in models that include a quadratic are generally not of much interest.
+
+```{r}
+cat("Model Specification:\n")
+cat("E(Y|X1, X2) = β₀ + β₁X₁ + β₂X₂ + β₃X₁² + β₄X₂² + β₅X₁X₂\n\n")
+
+# Create squared terms and interaction
+cakes$X1_sq <- cakes$X1^2
+cakes$X2_sq <- cakes$X2^2
+cakes$X1_X2 <- cakes$X1 * cakes$X2
+
+# Fit the quadratic model
+model1 <- lm(Y ~ X1 + X2 + X1_sq + X2_sq + X1_X2, data = cakes)
+
+cat("--- MODEL 1 SUMMARY ---\n")
+summary_model1 <- summary(model1)
+print(summary_model1)
+cat("\n")
+
+# Extract p-values for quadratic terms and interaction
+coef_summary <- summary_model1$coefficients
+
+# Check quadratic terms
+cat("Quadratic Terms:\n")
+cat("----------------\n")
+cat(sprintf("X1²:  Coefficient = %8.4f, SE = %.4f, t = %7.3f, p-value = %.6f %s\n",
+            coef_summary["X1_sq", "Estimate"],
+            coef_summary["X1_sq", "Std. Error"],
+            coef_summary["X1_sq", "t value"],
+            coef_summary["X1_sq", "Pr(>|t|)"],
+            ifelse(coef_summary["X1_sq", "Pr(>|t|)"] < 0.005, "✓ < 0.005", "✗ >= 0.005")))
+
+cat(sprintf("X2²:  Coefficient = %8.4f, SE = %.4f, t = %7.3f, p-value = %.6f %s\n",
+            coef_summary["X2_sq", "Estimate"],
+            coef_summary["X2_sq", "Std. Error"],
+            coef_summary["X2_sq", "t value"],
+            coef_summary["X2_sq", "Pr(>|t|)"],
+            ifelse(coef_summary["X2_sq", "Pr(>|t|)"] < 0.005, "✓ < 0.005", "✗ >= 0.005")))
+
+cat("\nInteraction Term:\n")
+cat("-----------------\n")
+cat(sprintf("X1×X2: Coefficient = %8.4f, SE = %.4f, t = %7.3f, p-value = %.6f %s\n",
+            coef_summary["X1_X2", "Estimate"],
+            coef_summary["X1_X2", "Std. Error"],
+            coef_summary["X1_X2", "t value"],
+            coef_summary["X1_X2", "Pr(>|t|)"],
+            ifelse(coef_summary["X1_X2", "Pr(>|t|)"] < 0.005, "✓ < 0.005", "✗ >= 0.005")))
+
+cat("\n")
+```
+
+**All three terms (X₁², X₂², and X₁×X₂) have p-values \< 0.005**, confirming:
+
+-   Strong evidence of non-linear (quadratic) effects
+
+-   Significant interaction between baking time and temperature
+
+-   The relationship between predictors and palatability is complex and curved
+
+"When fitting the polynomials, tests concerning main effects in models that include a quadratic are generally not of much interest"
+
+**Why main effects tests are not of much interest when quadratics are present:**
+
+1.  **The effect is NOT constant** - it varies with X₁ and X₂ values
+
+2.  **β₁ alone is incomplete** - it's only one component of a complex relationship
+
+3.  **The test H₀: β₁ = 0 is irrelevant** - it tests the effect at X₁ = 0, outside our range
+
+4.  **What matters instead:**
+
+    -   Are quadratic terms significant? ✓ YES (p \< 0.005)
+
+    -   Is the interaction significant? ✓ YES (p \< 0.005)
+
+    -   Does the variable matter overall? (joint test of all terms)
+
+5.  **Practical interpretation:**
+
+    -   Focus on the **shape of the response surface** (dome)
+
+    -   Find the **optimal point** (where ∂Y/∂X₁ = 0 and ∂Y/∂X₂ = 0)
+
+    -   Understand **how effects change** across the experimental region
+
+**In our case:** Both X₁ and X₂ clearly matter (the surface changes dramatically), but testing whether β₁ = 25.92 is significant tells us nothing useful about the baking process. What matters is that **the quadratics and interaction are significant**, proving we need the complex model to capture the optimal baking conditions.
+
+#### 2. The cake experiment was carried out in two blocks of seven observations each. It is possible that the response might differ by block. For example, if the blocks were different days, then differences in air temperature or humidity when the cakes were mixed might have some effect on `Y`. We can allow for block effects by adding a factor block to the mean function and possibly allowing for block by regressor interactions and block effects to the mean function fit in a new model and summarize results. The blocking is indicated by the variable `block` in the data file.
+
+```{r}
+# Convert block to factor
+cakes$block <- as.factor(cakes$block)
+
+cat("--- DATA BY BLOCK ---\n")
+cat("Block 1: n =", sum(cakes$block == 0), "observations\n")
+cat("Block 2: n =", sum(cakes$block == 1), "observations\n\n")
+
+# Summary statistics by block
+cat("Mean palatability by block:\n")
+by_block <- aggregate(Y ~ block, data = cakes, FUN = function(x) {
+  c(mean = mean(x), sd = sd(x), n = length(x))
+})
+print(by_block)
+cat("\n")
+
+# Model 2: Add block effect
+cat("--- MODEL 2: Adding Block Main Effect ---\n")
+cat("E(Y|X1, X2, block) = β₀ + β₁X₁ + β₂X₂ + β₃X₁² + β₄X₂² + β₅X₁X₂ + β₆block\n\n")
+
+model2 <- lm(Y ~ X1 + X2 + X1_sq + X2_sq + X1_X2 + block, data = cakes)
+summary_model2 <- summary(model2)
+print(summary_model2)
+cat("\n")
+
+# Model 3: Add block interactions with all terms
+cat("--- MODEL 3: Block with All Interactions ---\n")
+cat("E(Y|X1, X2, block) = β₀ + ... + β₆block + block×(all other terms)\n\n")
+
+model3 <- lm(Y ~ (X1 + X2 + X1_sq + X2_sq + X1_X2) * block, data = cakes)
+summary_model3 <- summary(model3)
+print(summary_model3)
+cat("\n")
+```
+
+**Test 1: Is Block Main Effect Significant?**
+
+**Hypotheses:**
+
+-   H₀: β₆ = 0 (no difference between blocks)
+
+-   H₁: β₆ ≠ 0 (blocks differ)
+
+**From Model 2:**
+
+-   Block coefficient: 0.1143
+
+-   Standard error: 0.2412
+
+-   t-statistic: 0.474
+
+-   **p-value: 0.650**
+
+**CONCLUSION: Block main effect is NOT significant (p = 0.650 \>\> 0.05)**
+
+**Interpretation:**
+
+-   No systematic difference in palatability between Block 1 and Block 2
+
+-   The effect is tiny (0.11 units) compared to SE (0.24)
+
+-   Environmental conditions were apparently consistent across blocks
+
+-   Different days/batches did not meaningfully affect cake quality
+
+**Test 2: Are Block Interactions Significant?**
+
+**Hypotheses:**
+
+-   H₀: All block × predictor interactions = 0
+
+-   H₁: At least one interaction ≠ 0
+
+**From Model 3 individual tests:** All estimable interactions are NOT significant:
+
+-   Time × block: p = 0.872
+
+-   Temperature × block: p = 0.532
+
+-   Time² × block: p = 0.834
+
+**Note:** Two interactions are aliased (NA) due to perfect multicollinearity - this is a problem with Model 3 structure.
+
+**CONCLUSION: Block interactions are NOT significant**
+
+**Interpretation:**
+
+-   The effect of baking time is the same in both blocks
+
+-   The effect of temperature is the same in both blocks
+
+-   The quadratic curvature is consistent across blocks
+
+-   The response surface shape does not differ between blocks
+
+**Key observations:**
+
+-   ↓ Adding block **decreases** Adjusted R²
+
+-   ↑ Adding block **increases** RSE (worse predictions)
+
+-   Model 3 has very few degrees of freedom (df=4)
+
+-   Model 3 has aliasing problems (NA coefficients)
+
+\*Why Model 3 Has Aliased Coefficients:
+
+**Problem:** With only 14 observations and trying to fit 12 parameters (including interactions), we have **overparameterization**.
+
+**Specifically:**
+
+-   Block is a factor with 2 levels
+
+-   When we interact block with 5 predictors, we get 5 additional terms
+
+-   But with only 7 observations per block, we don't have enough unique combinations
+
+-   Some interaction terms become perfectly collinear with others
+
+-   R drops them as "aliased (NA)"
+
+**This is a warning sign:** Model 3 is too complex for the available data!
+
+## Problem 5
+
+(Data file: `BGsall` ) Refer to the Berkeley Guidance study described in Problem 2. Using the data file `BGSall` , consider the regression of `HT18` on `HT9` and the grouping factor `Sex` .
+
+```{r}
+library(alr4)
+data(BGSall)
+head(BGSall)
+```
+
+#### 1. Draw the scatterplot of `HT18` versus `HT9` , using a different symbol for males and females. Comment on the information in the graph about an appropriate mean function for these data.
+
+```{r}
+# Create scatterplot
+par(mfrow = c(1, 1), mar = c(5, 5, 4, 2))
+
+# Plot with different colors and symbols
+plot(BGSall$HT9, BGSall$HT18,
+     xlab = "Height at Age 9 (HT9, cm)",
+     ylab = "Height at Age 18 (HT18, cm)",
+     main = "Height at 18 vs Height at 9 by Sex",
+     pch = ifelse(BGSall$Sex == "0", 19, 17),  # 19=circle for females, 17=triangle for males
+     col = ifelse(BGSall$Sex == "0", "red", "blue"),  # red=females, blue=males
+     cex = 1.2)
+
+# Add separate regression lines for each sex
+females <- BGSall[BGSall$Sex == "0", ]
+males <- BGSall[BGSall$Sex == "1", ]
+
+lm_female <- lm(HT18 ~ HT9, data = females)
+lm_male <- lm(HT18 ~ HT9, data = males)
+
+abline(lm_female, col = "red", lwd = 2)
+abline(lm_male, col = "blue", lwd = 2)
+
+# Add legend
+legend("topleft", 
+       legend = c("Females (0)", "Males (1)", "Female regression", "Male regression"),
+       col = c("red", "blue", "red", "blue"),
+       pch = c(19, 17, NA, NA),
+       lty = c(NA, NA, 1, 1),
+       lwd = c(NA, NA, 2, 2),
+       cex = 0.9)
+
+# Add grid
+grid()
+```
+
+**Visual Observations:**
+
+**1. LINEARITY:**
+
+-   [x] Both groups (females - red circles, males - blue triangles) show **strong linear relationships** between HT9 and HT18
+
+-   [x] Points cluster closely around their respective regression lines
+
+-   [x] No evidence of curvature or non-linear patterns
+
+-   **Conclusion:** Linear regression is appropriate for both groups
+
+**2. PARALLELISM OF LINES:**
+
+-   [x] The red line (females) and blue line (males) appear **approximately parallel**
+
+-   [x] Both lines have **similar slopes** - they rise at roughly the same rate
+
+-   [x] The lines maintain a consistent vertical distance from each other across the entire range of HT9
+
+-   **Conclusion:** Slopes appear to be equal, suggesting a parallel regression model may be appropriate
+
+**3. VERTICAL SEPARATION:**
+
+-   [x] There is a clear **vertical shift** between the two groups
+
+-   [x] At any given value of HT9, males (blue triangles) are consistently **below** females (red circles)
+
+-   [x] This vertical gap appears **constant** across the range of HT9 values
+
+-   Interpretation
+
+**4. SCATTER AND VARIABILITY:**
+
+-   [x] Both groups show **similar scatter** around their respective regression lines
+
+-   [x] Variability appears **homogeneous** (constant) across the range of HT9
+
+-   [x] No evidence of increasing or decreasing variance (homoscedasticity holds)
+
+-   **Conclusion:** Equal variance assumption is reasonable
+
+**5. OUTLIERS:**
+
+-   [x] **No extreme outliers** visible in either group
+
+-   [x] All points fall within reasonable distance of their regression lines
+
+-   [x] No influential points that would distort the analysis
+
+**6. SAMPLE SIZES:**
+
+-   [x] **Females (red):** Appear to have slightly more observations (\~70-80 points)
+
+-   [x] **Males (blue):** Appear to have slightly fewer observations (\~60-70 points)
+
+-   [x] Both groups have **adequate sample sizes** for reliable regression analysis
+
+**7. OVERLAP IN HT9 RANGE:**
+
+-   [x] Both groups span **similar ranges** of HT9 (approximately 120-152 cm)
+
+-   [x] Good **overlap** in the predictor variable across groups
+
+-   [x] This allows for valid comparison of intercepts
+
+#### 2. Obtain the appropriate test for a parallel regression model.
+
+```{r}
+cat("We need to test whether the slopes are equal (parallel lines) or\n")
+cat("different (separate regression lines for each sex).\n\n")
+
+# Convert Sex to factor if not already
+BGSall$Sex <- as.factor(BGSall$Sex)
+
+# Model 1: Separate slopes (interaction model)
+cat("--- MODEL 1: SEPARATE SLOPES (Interaction Model) ---\n")
+cat("E(HT18 | HT9, Sex) = β₀ + β₁(HT9) + β₂(Sex) + β₃(HT9 × Sex)\n\n")
+
+model_separate <- lm(HT18 ~ HT9 * Sex, data = BGSall)
+summary_separate <- summary(model_separate)
+print(summary_separate)
+cat("\n")
+
+# Model 2: Parallel slopes (no interaction)
+cat("--- MODEL 2: PARALLEL SLOPES (No Interaction) ---\n")
+cat("E(HT18 | HT9, Sex) = β₀ + β₁(HT9) + β₂(Sex)\n\n")
+
+model_parallel <- lm(HT18 ~ HT9 + Sex, data = BGSall)
+summary_parallel <- summary(model_parallel)
+print(summary_parallel)
+cat("\n")
+
+# ANOVA test for interaction
+cat("--- ANOVA TEST: Testing for Interaction (H₀: Parallel Lines) ---\n")
+
+cat("Hypotheses:\n")
+cat("  H₀: β₃ = 0  (slopes are equal, parallel regression is adequate)\n")
+cat("  H₁: β₃ ≠ 0  (slopes differ, need separate regressions)\n\n")
+
+anova_test <- anova(model_parallel, model_separate)
+print(anova_test)
+cat("\n")
+
+# Extract key statistics
+F_stat <- anova_test[2, "F"]
+p_value <- anova_test[2, "Pr(>F)"]
+df1 <- anova_test[2, "Df"]
+df2 <- anova_test[2, "Res.Df"]
+
+cat("TEST RESULTS:\n")
+cat("-------------\n")
+cat(sprintf("F-statistic: F(%d, %d) = %.4f\n", df1, df2, F_stat))
+cat(sprintf("p-value: %.4f\n", p_value))
+cat("\n")
+
+```
+
+**Hypotheses:**
+
+**H₀ (Null Hypothesis):** β₃ = 0
+
+-   The slopes are equal for males and females
+
+-   Parallel regression model is adequate
+
+-   The effect of HT9 on HT18 is the same for both sexes
+
+**H₁ (Alternative Hypothesis):** β₃ ≠ 0
+
+-   The slopes differ between males and females
+
+-   Need separate regression lines (interaction present)
+
+-   The effect of HT9 on HT18 differs by sex
+
+#### 3. Assuming the parallel regression model is adequate, estimate a 95% confidence interval for the difference between males and females. For the parallel regression model, this is the different in the intercepts of the two groups.
+
+```{r}
+cat("Assuming the parallel regression model is adequate...\n\n")
+
+cat("--- PARALLEL REGRESSION MODEL RESULTS ---\n")
+cat("Model: HT18 = β₀ + β₁(HT9) + β₂(Sex)\n\n")
+
+# Get coefficients and confidence intervals
+coef_summary <- summary_parallel$coefficients
+conf_int <- confint(model_parallel, level = 0.95)
+
+cat("Coefficient Estimates:\n")
+cat("----------------------\n")
+print(coef_summary)
+cat("\n")
+
+cat("95% Confidence Intervals:\n")
+cat("-------------------------\n")
+print(conf_int)
+cat("\n")
+
+# Extract the Sex coefficient (difference between males and females)
+sex_coef <- coef_summary["Sex1", "Estimate"]
+sex_se <- coef_summary["Sex1", "Std. Error"]
+sex_t <- coef_summary["Sex1", "t value"]
+sex_p <- coef_summary["Sex1", "Pr(>|t|)"]
+
+sex_ci_lower <- conf_int["Sex1", 1]
+sex_ci_upper <- conf_int["Sex1", 2]
+cat("Assuming the parallel regression model is adequate...\n\n")
+
+cat("--- PARALLEL REGRESSION MODEL RESULTS ---\n")
+cat("Model: HT18 = β₀ + β₁(HT9) + β₂(Sex)\n\n")
+
+# Get coefficients and confidence intervals
+coef_summary <- summary_parallel$coefficients
+conf_int <- confint(model_parallel, level = 0.95)
+
+cat("Coefficient Estimates:\n")
+cat("----------------------\n")
+print(coef_summary)
+cat("\n")
+
+cat("95% Confidence Intervals:\n")
+cat("-------------------------\n")
+print(conf_int)
+cat("\n")
+
+# Extract the Sex coefficient (difference between males and females)
+sex_coef <- coef_summary["Sex1", "Estimate"]
+sex_se <- coef_summary["Sex1", "Std. Error"]
+sex_t <- coef_summary["Sex1", "t value"]
+sex_p <- coef_summary["Sex1", "Pr(>|t|)"]
+
+sex_ci_lower <- conf_int["Sex1", 1]
+sex_ci_upper <- conf_int["Sex1", 2]
+```
+
+## Problem 6
+
+Sex discrimination (Data file: `salary` ) The data file concerns salary and other characteristics of all faculty in a small Midwestern college collected in the early 1980s for presentation in legal proceedings for which discrimination against women in salary was at issue. All the people in the data hold tenured or tenure track
+
+1\. Get appropriate graphical summaries of the data and discuss the graphs.
+
+2\. Test the hypothesis that the mean salary for men and women is the same. What alternative hypothesis do you think is appropriate?
+
+3\. Assuming no interactions between sex and the other predictors, obtain a 95% confidence interval for the difference in salary between males and females.
+
+4\. Finkelstein (1980), in a discussion of the use of regression in discrimination cases, wrote, “\[a\] variable may reflect a position or status bestowed by the employer, in which cases if there is discrimination in the award of the position or status, the variable may be ‘tainted.’” Thus, for example, if discrimination is at work in promotion of faculty to higher ranks, using rank to adjust salaries before comparing the sexes may be not acceptable to the courts. Exclude the variable rank, refit, and summarize.
+
+## Problem 7
+
+This question involves the use of multiple linear regression on the Auto data set.
+
+```{r}
+library(ISLR)
+data(Auto)
+head(Auto)
+```
+
+#### 1. Produce a scatterplot matrix which includes all of the variables in the data set.
+
+```{r}
+# Scatterplot matrix (excluding 'name' which is qualitative)
+pairs(Auto[, -9], 
+      main = "Scatterplot Matrix - Auto Dataset",
+      pch = 19,
+      col = rgb(0, 0, 1, 0.3),
+      cex = 0.7)
+```
+
+#### 2. Compute the matrix of correlations between the variables using the function `cor()`. You will need to exclude the name variable, which is qualitative.
+
+```{r}
+# Exclude 'name' variable (column 9)
+Auto_numeric <- Auto[, -9]
+
+# Compute correlation matrix
+cor(Auto_numeric)
+```
+
+#### 3. Use the `lm()` function to perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. Use the `summary()` function to print the results. Comment on the output. For instance:
+
+```{r}
+cat("Fitting model: mpg ~ cylinders + displacement + horsepower + weight +\n")
+cat("                     acceleration + year + origin\n")
+# Fit full model (excluding 'name')
+model_full <- lm(mpg ~ . - name, data = Auto)
+
+# Print summary
+summary_full <- summary(model_full)
+print(summary_full)
+```
+
+##### i. Is there a relationship between the predictors and the response?
+
+##### ii. Which predictors appear to have a statistically significant relationship to the response?
+
+##### iii. What does the coefficient for the year variable suggest?
+
+#### 4. Use the plot() function to produce diagnostic plots of the linear regression ft. Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high leverage?
+
+```{r}
+# Create 2x2 diagnostic plots
+par(mfrow = c(2, 2))
+plot(model_full, cex = 0.8, pch = 19)
+par(mfrow = c(1, 1))
+```
+
+#### 5. Use the \* and : symbols to fit linear regression models with interaction effects. Do any interactions appear to be statistically significant?
+
+#### 6. Try a few different transformations of the variables, such as $\log(x), \sqrt{x}, x^2$. Comment on your findings.
+
+## Problem 8
+
+In this exercise, we will generate simulated data, and will then use this data to perform best subset selection.
+
+#### 1. Use the `norm()` function to generate a predictor X of length n = 100, as well as a noise vector $\epsilon$ of length n= 100.
+
+```{r}
+n <- 100
+X <- rnorm(n)      # Predictor of length 100
+epsilon <- rnorm(n) # Noise vector of length 100
+```
+
+#### 2. Generate a response vector Y of length n= 100 according to the model $Y= β_0 + β_1X+ β_2X^2 + β_3X^3 + ϵ$, where β0,β1,β2 and β3 are constants of your choice.
+
+```{r}
+# Choose constants
+beta0 <- 3
+beta1 <- 2
+beta2 <- -3
+beta3 <- 1
+
+Y <- beta0 + beta1*X + beta2*X^2 + beta3*X^3 + epsilon
+
+cat("True coefficients:\n")
+cat("β0 =", beta0, "\n")
+cat("β1 =", beta1, "\n")
+cat("β2 =", beta2, "\n")
+cat("β3 =", beta3, "\n\n")
+```
+
+#### 3. Use the `regsubsets()` function to perform best subset selection in order to choose the best model containing the predictors X,X2,...,Xn. What is the best model obtained according to Cp,BIC, and adjust R2? Show some plots to provided evidence for your answer, and report the coefficients of the best model obtained. Note you will need to use the data.frame() function to create a single data set containing both X and Y.
+
+```{r}
+# Create data frame with polynomial terms up to X^10
+data_full <- data.frame(
+  y = Y,
+  x1 = X,
+  x2 = X^2,
+  x3 = X^3,
+  x4 = X^4,
+  x5 = X^5,
+  x6 = X^6,
+  x7 = X^7,
+  x8 = X^8,
+  x9 = X^9,
+  x10 = X^10
+)
+
+# Perform best subset selection
+library(leaps)
+regfit_full <- regsubsets(y ~ ., data = data_full, nvmax = 10)
+reg_summary <- summary(regfit_full)
+reg_summary
+
+# Find best models according to different criteria
+
+# Best model by Cp
+best_cp <- which.min(reg_summary$cp)
+cat("\n\nBest model size by Cp:", best_cp, "\n")
+cat("Cp value:", reg_summary$cp[best_cp], "\n")
+
+# Best model by BIC
+best_bic <- which.min(reg_summary$bic)
+cat("Best model size by BIC:", best_bic, "\n")
+cat("BIC value:", reg_summary$bic[best_bic], "\n")
+
+# Best model by adjusted R²
+best_adjr2 <- which.max(reg_summary$adjr2)
+cat("Best model size by Adjusted R²:", best_adjr2, "\n")
+cat("Adjusted R² value:", reg_summary$adjr2[best_adjr2], "\n\n")
+
+# Create diagnostic plots
+par(mfrow = c(2, 2))
+
+# Plot Cp
+plot(reg_summary$cp, xlab = "Number of Variables", ylab = "Cp", type = "l")
+points(best_cp, reg_summary$cp[best_cp], col = "red", cex = 2, pch = 20)
+
+# Plot BIC
+plot(reg_summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
+points(best_bic, reg_summary$bic[best_bic], col = "red", cex = 2, pch = 20)
+
+# Plot Adjusted R²
+plot(reg_summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted R²", type = "l")
+points(best_adjr2, reg_summary$adjr2[best_adjr2], col = "red", cex = 2, pch = 20)
+
+# Show which variables are in the best models
+cat("Variables in best model (by BIC):\n")
+print(coef(regfit_full, best_bic))
+
+```
+
+1. **BIC (Bayesian Information Criterion)**
+
+-   **Best model size:** 3 variables
+
+-   **BIC value:** -382.5441
+
+-   **Selected variables:** X, X², X³ (x1, x2, x3)
+
+-   \*\*This matches the true model exactly! \*\*
+
+2. **Cp (Mallow's Cp)**
+
+-   **Best model size:** 4 variables
+
+-   **Cp value:** 0.6724
+
+-   **Selected variables:** X, X², X³, X⁴ (x1, x2, x3, x4)
+
+-   **Includes one extra variable (X⁴)**
+
+3. **Adjusted R²**
+
+-   **Best model size:** 4 variables
+
+-   **Adjusted R² value:** 0.9818
+
+-   **Selected variables:** X, X², X³, X⁴ (x1, x2, x3, x4)
+
+-   **Same as Cp - includes one extra variable**
+
+**Interpretation of the Plot**
+
+**Cp Plot (Top Left):**
+
+-   Shows dramatic decrease from 1 to 3 variables
+
+-   Reaches minimum at 4 variables (marked with red point)
+
+-   Remains relatively flat after 4 variables
+
+-   The value at 3 variables is very close to the minimum
+
+**BIC Plot (Top Right):**
+
+-   Shows steep decrease initially
+
+-   **Achieves minimum at 3 variables** (marked with red point)
+
+-   Clearly penalizes additional variables more heavily than Cp
+
+-   Increases slightly as more variables are added
+
+**Adjusted R² Plot (Bottom Left):**
+
+-   Shows rapid increase from 1 to 3 variables
+
+-   **Achieves maximum at 4 variables** (marked with red point)
+
+-   Plateaus after 4 variables with minimal improvement
+
+-   Very little gain beyond 4 variables
+
+**Key Findings**
+
+1. **BIC Successfully Identifies the True Model**
+
+-   The true model is Y = β₀ + β₁X + β₂X² + β₃X³ + ε
+
+-   BIC correctly selects exactly these 3 variables
+
+-   This demonstrates BIC's effectiveness when the true model is relatively simple
+
+2. **Cp and Adjusted R² Select Slightly Larger Models**
+
+-   Both select a 4-variable model (adding X⁴)
+
+-   This is expected because:
+
+    -   Cp has a lighter penalty for model complexity than BIC
+
+    -   Adjusted R² also penalizes complexity less than BIC
+
+    -   The improvement from adding X⁴ is small but positive
+
+3. **Evidence from Plots**
+
+-   **BIC plot** shows a clear, sharp minimum at 3 variables
+
+-   **Cp plot** shows the minimum at 4 variables, but the value at 3 variables is very close
+
+-   **Adjusted R² plot** shows marginal improvement beyond 3 variables
+
+-   All three criteria agree that models with fewer than 3 variables are insufficient
+
+-   All three criteria show diminishing returns beyond 4 variables
+
+4. **Practical Recommendation**
+
+-   **Choose the 3-variable model** for the following reasons:
+
+    -   Matches the true underlying model
+
+    -   BIC's stronger penalty for complexity is justified here
+
+    -   Coefficient estimates are reasonable
+
+    -   Simpler models are more interpretable and less prone to overfitting
+
+    -   The additional X⁴ term provides minimal improvement
+
+5. **Variable Selection Pattern**
+
+Looking at the subset selection table:
+
+-   **1-variable model:** X³ only (captures the curvature)
+
+-   **2-variable model:** X², X³ (polynomial terms dominate)
+
+-   **3-variable model:** X, X², X³ (the true model!)
+
+-   **4-variable model:** X, X², X³, X⁴ (slight overfit)
+
+This progression makes sense as the algorithm builds up complexity.
+
+**Conclusion**
+
+**The best model is the 3-variable model containing X, X², and X³**, as indicated by BIC. This model:
+
+-   Correctly identifies all truly important predictors
+
+-   Provides accurate coefficient estimates
+
+-   Balances model fit with parsimony
+
+-   Is supported by clear evidence in the BIC plot
+
+While Cp and Adjusted R² suggest adding X⁴, the improvement is marginal, and the more parsimonious 3-variable model should be preferred for interpretability and generalization to new data.
+
+#### 4. Repeat (3), using forward stepwise selection and also using backwards stepwise selection. How does your answer compare to the results in (3)?
+
+```{r}
+# Forward stepwise selection
+regfit_fwd <- regsubsets(y ~ ., data = data_full, nvmax = 10, method = "forward")
+fwd_summary <- summary(regfit_fwd)
+fwd_summary
+
+# Backward stepwise selection
+regfit_bwd <- regsubsets(y ~ ., data = data_full, nvmax = 10, method = "backward")
+bwd_summary <- summary(regfit_bwd)
+bwd_summary
+
+# Compare the three methods
+cat("Forward Stepwise:\n")
+cat("Best by Cp:", which.min(fwd_summary$cp), "\n")
+cat("Best by BIC:", which.min(fwd_summary$bic), "\n")
+cat("Best by Adj R²:", which.max(fwd_summary$adjr2), "\n")
+
+cat("\nBackward Stepwise:\n")
+cat("Best by Cp:", which.min(bwd_summary$cp), "\n")
+cat("Best by BIC:", which.min(bwd_summary$bic), "\n")
+cat("Best by Adj R²:", which.max(bwd_summary$adjr2), "\n")
+
+# Coefficients comparison
+cat("\nCoefficients - Best Subset (BIC):\n")
+print(coef(regfit_full, best_bic))
+
+cat("\nCoefficients - Forward Stepwise (BIC):\n")
+print(coef(regfit_fwd, which.min(fwd_summary$bic)))
+
+cat("\nCoefficients - Backward Stepwise (BIC):\n")
+print(coef(regfit_bwd, which.min(bwd_summary$bic)))
+```
+
+1. **Best Model Size by Each Criterion**
+
+| Method                | Cp  | BIC | Adjusted R² |
+|-----------------------|-----|-----|-------------|
+| **Best Subset**       | 4   | 3   | 4           |
+| **Forward Stepwise**  | 4   | 3   | 4           |
+| **Backward Stepwise** | 4   | 3   | 4           |
+
+**Key Finding:** All three methods agree on the optimal model size for each criterion
+
+2. **Coefficient Estimates (BIC-selected 3-variable model)**
+
+All three methods produce **identical coefficient estimates**:
+
+| Coefficient    | Best Subset | Forward   | Backward  |
+|----------------|-------------|-----------|-----------|
+| Intercept (β₀) | 2.872023    | 2.872023  | 2.872023  |
+| x1 (β₁)        | 2.024826    | 2.024826  | 2.024826  |
+| x2 (β₂)        | -2.963227   | -2.963227 | -2.963227 |
+| x3 (β₃)        | 1.036866    | 1.036866  | 1.036866  |
+
+**Key Finding:** All three methods select the same variables AND estimate the same coefficients
+
+**Similarities (Models of Size 1-5)**
+
+For models of size 1 through 5, **all three methods produce IDENTICAL results**:
+
+✅ **Size 1:** All select X³\
+✅ **Size 2:** All select X², X³\
+✅ **Size 3:** All select X, X², X³ ⭐ (True model!)\
+✅ **Size 4:** All select X, X², X³, X⁴\
+✅ **Size 5:** All select X, X², X³, X⁴, X⁶
+
+**Differences (Models of Size 6+)**
+
+Starting at size 6, the methods begin to diverge:
+
+**Size 6 Model:**
+
+-   **Best Subset & Forward:** X, X², X³, X⁴, X⁶, **X⁸**
+
+-   **Backward:** X, X², X³, X⁴, **X⁵**, X⁶
+
+**Size 7 Model:**
+
+-   **Best Subset & Forward:** X, X², X³, X⁴, X⁵, X⁶, **X⁸**
+
+-   **Backward:** X, X², X³, X⁴, X⁵, X⁶, **X⁷**
+
+**Size 8 Model:**
+
+-   **Best Subset:** X, X², X³, X⁴, X⁵, X⁶, X⁷, **X⁹**
+
+-   **Forward:** X, X², X³, X⁴, X⁵, X⁶, X⁷, **X⁸**
+
+-   **Backward:** X, X², X³, X⁴, X⁵, X⁶, X⁷, **X⁹**
+
+**Why Do They Agree So Closely?**
+
+1. **Clear Signal in the Data**
+
+-   The true model (X, X², X³) has a strong signal
+
+-   True coefficients are relatively large (β₁=2, β₂=-3, β₃=0.3)
+
+-   With n=100 and clear structure, all methods can identify the signal
+
+2. **Strong Hierarchy in Polynomial Terms**
+
+-   Lower-order terms (X, X², X³) dominate the relationship
+
+-   Higher-order terms contribute little beyond noise
+
+-   This makes the "correct" variables obvious to all methods
+
+3. **Limited Multicollinearity Issues (at this size)**
+
+-   While polynomial terms are correlated, the problem isn't severe enough to confuse the methods
+
+-   All methods can distinguish signal from noise up to size 5
+
+4. **Nested Structure of True Model**
+
+-   The progression X³ → (X², X³) → (X, X², X³) makes intuitive sense
+
+-   Both forward and backward methods naturally follow this hierarchy
+
+#### 5. Now fit a lasso model to the simulated data, again using X,X2,...,X10 as predictors. Use cross-validation to select the optimal value of λCreate plots of the cross-validation error as a function of λ. Report the resulting coefficient estimates, and discuss the results obtained.
+
+```{r}
+# Prepare data for glmnet
+X_matrix <- as.matrix(data_full[, -1])  # Remove y column
+Y_vector <- data_full$y
+
+# Perform cross-validation to select lambda
+library(glmnet)
+set.seed(123)
+cv_lasso <- cv.glmnet(X_matrix, Y_vector, alpha = 1)
+
+# Plot cross-validation results
+par(mfrow = c(1, 2))
+plot(cv_lasso)
+title("Lasso Cross-Validation", line = 2.5)
+
+# Plot coefficient paths
+lasso_fit <- glmnet(X_matrix, Y_vector, alpha = 1)
+plot(lasso_fit, xvar = "lambda", label = TRUE)
+title("Lasso Coefficient Paths", line = 2.5)
+
+# Best lambda values
+cat("\nOptimal lambda (min):", cv_lasso$lambda.min, "\n")
+cat("Optimal lambda (1se):", cv_lasso$lambda.1se, "\n")
+
+# Coefficients at optimal lambda
+cat("\nCoefficients at lambda. min:\n")
+lasso_coef_min <- coef(cv_lasso, s = "lambda.min")
+print(lasso_coef_min)
+
+cat("\nCoefficients at lambda.1se:\n")
+lasso_coef_1se <- coef(cv_lasso, s = "lambda.1se")
+print(lasso_coef_1se)
+```
+
+Cross-Validation Plot Analysis (Left Panel)
+
+Reading the CV Plot:
+
+**X-axis: -Log(λ)**
+
+-   Moving left to right: λ decreases (less regularization)
+
+-   Left side (high λ): Heavy penalty, sparse models
+
+-   Right side (low λ): Light penalty, fuller models
+
+**Y-axis: Mean-Squared Error**
+
+-   Cross-validated prediction error
+
+-   Lower is better
+
+**Numbers at top (0, 3, 3, 3, 3, 3, 3, 5, 5):**
+
+-   These show the **number of non-zero coefficients** at each λ
+
+-   At very high λ (left): 0 variables (null model)
+
+-   At moderate λ: 3 variables (the true model!)
+
+-   At low λ (right): 4-5 variables (starting to overfit)
+
+**Vertical dashed lines:**
+
+-   **Left line (λ.1se):** At -Log(λ) ≈ 1.7
+
+    -   Model has **3 variables**
+
+    -   More conservative choice
+
+-   **Right line (λ.min):** At -Log(λ) ≈ 2.7
+
+    -   Model has **3 variables**
+
+    -   Minimum CV error
+
+**Error bars:**
+
+-   Gray bars show ± 1 standard error
+
+-   Indicate uncertainty in CV error estimates
+
+Key Observations:
+
+1.  **Sharp decrease in error:** From left to middle, error drops dramatically as important variables enter
+
+2.  **Flat region:** After -Log(λ) ≈ 2, error plateaus
+
+    -   Adding more variables doesn't help
+
+    -   This is the "sweet spot"
+
+3.  **Both optimal λ values select 3 variables:**
+
+    -   Remarkably, λ.min and λ.1se both give 3-variable models
+
+    -   Strong evidence that 3 is the correct model size
+
+4.  **Minimal improvement beyond 3 variables:**
+
+    -   When 4-5 variables are included (far right), error doesn't decrease much
+
+    -   Suggests X⁴, X⁵, etc. are noise
+
+Coefficient Paths Plot Analysis (Right Panel)
+
+Reading the Coefficient Paths:
+
+**X-axis: -Log(λ)**
+
+-   Same as CV plot
+
+-   Left to right: decreasing regularization
+
+**Y-axis: Coefficient values**
+
+-   Each colored line represents one predictor's coefficient
+
+-   Shows how coefficients change with λ
+
+**Numbers at top (0, 3, 3, 3, 3, 4, 4):**
+
+-   Number of non-zero coefficients
+
+-   Matches the CV plot
+
+Identifying the Lines:
+
+Looking at the final coefficient values (far right, low λ):
+
+| Color        | Final Value | Variable    | True Value |
+|--------------|-------------|-------------|------------|
+| **Red/Pink** | ≈ -3        | **X² (x2)** | -3. 0      |
+| **Black**    | ≈ +2        | **X (x1)**  | +2.0       |
+| **Green**    | ≈ +1        | **X³ (x3)** | +0.3       |
+| **Blue**     | ≈ 0         | X⁴-X¹⁰      | 0          |
+
+Key Observations:
+
+1.  **Three variables persist as λ increases (moving left):**
+
+    -   **Red line (X²):** Strongest signal, last to shrink to zero
+
+    -   **Black line (X):** Second strongest, persists long
+
+    -   **Green line (X³):** Third, but still clearly non-zero
+
+2.  **All other variables stay at zero:**
+
+    -   Blue line stays flat at 0
+
+    -   Perfect variable selection!
+
+3.  **Coefficient stability:**
+
+    -   The three important variables stabilize quickly (around -Log(λ) = 0)
+
+    -   Their values don't change much as λ decreases further
+
+    -   This indicates robust, stable estimates
+
+4.  **Order of variable entry (reading right to left):**
+
+    -   First to enter (strongest): X² (red, steepest descent)
+
+    -   Second: X (black)
+
+    -   Third: X³ (green)
+
+    -   This matches the importance in the true model
+
+Coefficient Estimates
+
+At λ.min (Minimum CV Error):
+
+| Variable    | Lasso Estimate | True Value | OLS (from Part 3) | Difference  |
+|-------------|----------------|------------|-------------------|-------------|
+| Intercept   | 2.8295         | 3.0        | 2.8720            | -0.0425     |
+| **X (x1)**  | **1.9878**     | **2.0**    | **2.0248**        | **-0.0370** |
+| **X² (x2)** | **-2.9234**    | **-3.0**   | **-2.9632**       | **+0.0398** |
+| **X³ (x3)** | **1.0305**     | 1          | **1.0369**        | **-0.0064** |
+| X⁴ (x4)     | 0              | 0          | \-                | \-          |
+| X⁵-X¹⁰      | 0              | 0          | \-                | \-          |
+
+**Resulting Model:**
+
+```         
+Ŷ = 2.830 + 1.988·X - 2.923·X² + 1.031·X³
+```
+
+At λ.1se (One Standard Error Rule):
+
+| Variable    | Lasso Estimate | True Value | Difference from λ.min |
+|-------------|----------------|------------|-----------------------|
+| Intercept   | 2.7537         | 3.0        | -0.0758               |
+| **X (x1)**  | **1.9210**     | **2.0**    | -0.0668               |
+| **X² (x2)** | **-2.8523**    | **-3.0**   | +0.0711               |
+| **X³ (x3)** | **1.0193**     | 1          | -0.0112               |
+| X⁴-X¹⁰      | 0              | 0          | 0                     |
+
+**Resulting Model:**
+
+```         
+Ŷ = 2.754 + 1.921·X - 2.852·X² + 1.019·X³
+```
+
+Key Observations:
+
+1.  **Perfect variable selection:**
+
+    -   Both λ values select exactly X, X², X³
+
+    -   All other variables shrunk to exactly zero (shown as ".")
+
+    -   This is the true model structure!
+
+2.  **Lasso vs. OLS coefficients:**
+
+    -   Lasso estimates are **slightly shrunk** toward zero
+
+    -   This is expected due to L1 penalty (regularization technique)
+
+    -   Shrinkage is minimal (all within 2% of OLS)
+
+    -   Strong signal overcomes the penalty
+
+3.  **λ.1se vs. λ.min:**
+
+    -   λ.1se has slightly more shrinkage (larger penalty)
+
+    -   All coefficients are pulled slightly closer to zero
+
+    -   Differences are very small (\~3-4%)
+
+    -   Both models essentially equivalent for this data
+
+4.  **Comparison to true values:**
+
+    -   β₀, β₁, β₂: Excellent recovery
+
+Discussion of Results
+
+**What Worked Well:**
+
+1.  **Perfect variable selection:** All 7 irrelevant variables correctly excluded
+
+2.  **Robust to λ choice:** Both λ.min and λ.1se select same variables
+
+3.  **Accurate coefficient estimates:** Very close to true values (and to OLS)
+
+4.  **Clear visual evidence:** Both plots clearly show 3-variable model is optimal
+
+5.  **Agreement with other methods:** Lasso confirms subset selection results
+
+6\. Now generate a response vector Y according to the model. Y= β0 + β7X7 + ϵ, and perform best subset selection and the lasso. Discuss the results obtained.
+
+```{r}
+# Generate new response
+beta0_new <- 3
+beta7 <- 2
+
+Y_new <- beta0_new + beta7*X^7 + epsilon
+
+cat("True coefficients:\n")
+cat("β0 =", beta0_new, "\n")
+cat("β7 =", beta7, "\n\n")
+
+# Update data frame
+data_full$y <- Y_new
+
+# Best subset selection
+regfit_full_new <- regsubsets(y ~ ., data = data_full, nvmax = 10)
+reg_summary_new <- summary(regfit_full_new)
+
+# Find best models
+best_cp_new <- which.min(reg_summary_new$cp)
+best_bic_new <- which.min(reg_summary_new$bic)
+best_adjr2_new <- which.max(reg_summary_new$adjr2)
+
+cat("Best Subset Selection Results:\n")
+cat("Best model size by Cp:", best_cp_new, "\n")
+cat("Best model size by BIC:", best_bic_new, "\n")
+cat("Best model size by Adjusted R²:", best_adjr2_new, "\n\n")
+
+cat("Coefficients of best model (by BIC):\n")
+print(coef(regfit_full_new, best_bic_new))
+
+# Lasso for new model
+Y_vector_new <- data_full$y
+cv_lasso_new <- cv.glmnet(X_matrix, Y_vector_new, alpha = 1)
+
+cat("\n\nLasso Results:\n")
+cat("Optimal lambda (min):", cv_lasso_new$lambda.min, "\n")
+cat("Optimal lambda (1se):", cv_lasso_new$lambda.1se, "\n")
+
+cat("\nCoefficients at lambda.min:\n")
+lasso_coef_new <- coef(cv_lasso_new, s = "lambda.min")
+print(lasso_coef_new)
+
+# Plot comparison
+par(mfrow = c(2, 2))
+
+# Best subset selection plots
+plot(reg_summary_new$cp, xlab = "Number of Variables", ylab = "Cp", 
+     type = "l", main = "Best Subset - Cp")
+points(best_cp_new, reg_summary_new$cp[best_cp_new], col = "red", cex = 2, pch = 20)
+
+plot(reg_summary_new$bic, xlab = "Number of Variables", ylab = "BIC", 
+     type = "l", main = "Best Subset - BIC")
+points(best_bic_new, reg_summary_new$bic[best_bic_new], col = "red", cex = 2, pch = 20)
+
+# Lasso plots
+plot(cv_lasso_new, main = "Lasso CV")
+plot(glmnet(X_matrix, Y_vector_new, alpha = 1), xvar = "lambda", 
+     main = "Lasso Paths")
+```
+
+Model Selection by Different Criteria
+
+| Criterion       | Best Size | Variables Selected |
+|-----------------|-----------|--------------------|
+| **BIC**         | **1**     | **X⁷** ✅          |
+| **Cp**          | 3         | X⁷ + 2 others      |
+| **Adjusted R²** | 3         | X⁷ + 2 others      |
+
+Analysis of Best Subset Selection Plots
+
+-   Minimum clearly at 3 variables
+-   Cp ≈ 0 at size 3
+-   Increases for smaller and larger models
+-   Very flat after size 3 (no benefit to more variables)
+
+**Interpretation:**
+
+-   Cp suggests a 3-variable model
+
+-   This is **overfitting** - including spurious correlated terms
+
+-   Cp's lighter penalty allows noise variables
+
+**BIC Plot (Top Right):**
+
+-   Clear, sharp minimum at 1 variable
+-   BIC ≈ -1095 at size 1
+-   Increases monotonically for larger models
+-   Strong penalty prevents including correlated noise
+
+**Interpretation:**
+
+-   BIC correctly identifies the 1-variable model
+
+-   Heavier penalty for complexity works well here
+
+-   This is the **correct answer**
+
+Coefficients of Best Model (BIC):
+
+**Comparison:**
+
+-   **Intercept:** 2.907 vs. 3.0 → Difference: -0.09 (3% error)
+
+-   **X⁷:** 2.001 vs. 2.0 → Difference: +0.001 (0.05% error)
+
+BIC-selected model almost perfectly recovers the true parameters
+
+Lasso Results
+
+Optimal Lambda Values
+
+| Lambda     | Value | Meaning            |
+|------------|-------|--------------------|
+| **λ. min** | 7.11  | Minimizes CV error |
+| **λ. 1se** | 9.40  | One SE rule        |
+
+**Key observation:** These λ values are **much larger** than in Part 5:
+
+-   Part 5: λ. min = 0.064, λ.1se = 0.179
+
+-   Part 6: λ.min = 7.11, λ.1se = 9.40
+
+-   \*\*\~100× larger! \*\*
+
+\*\*Why? \*\*
+
+-   Weaker signal (only X⁷ matters, vs. X + X² + X³ before)
+
+-   More noise to fight against
+
+-   Higher penalty needed to avoid spurious correlations
+
+**Comparison to True Model:**
+
+-   **Intercept:** 2.495 vs. 3.0 → Difference: -0.506 (17% error)
+
+-   **X⁷:** 1.942 vs. 2.0 → Difference: -0.058 (3% error)
+
+Analysis of Lasso Performance
+
+**Variable Selection: Perfect**
+
+-   Only X⁷ has non-zero coefficient
+
+-   All other variables correctly excluded
+
+-   No false positives
+
+**Coefficient Estimates: Good but Shrunk**
+
+-   X⁷ coefficient: 1.942 vs. 2.0 (3% underestimate)
+
+-   This shrinkage is expected with lasso
+
+-   Trade-off: sparse model vs. slight bias
+
+-   Intercept: 2.495 vs. 3.0 (17% error)
+
+-   Larger error, but intercept less important
+
+-   Likely due to centering and L1 penalty interaction
+
+Lasso Cross-Validation Plot Analysis
+
+**Numbers at top (0, 1, 1, 1, 1, 1, 1, 1, 1, 1):**
+
+-   Show number of non-zero coefficients
+
+-   At high λ (left): 0 variables (null model)
+
+-   At moderate to low λ (middle to right): **consistently 1 variable**
+
+-   Perfect! The model maintains sparsity across wide λ range
+
+**Error curve:**
+
+-   High error at left (no variables, underfitting)
+-   Sharp drop as X⁷ enters the model
+-   Flat region from -4. 5 to -2.5 on -Log(λ) scale
+-   Error stable when X⁷ is in the model
+
+**Vertical dashed lines:**
+
+-   Both λ.min and λ.1se in the "1 variable" region
+
+-   Both select the same model
+
+-   Strong evidence for 1-variable solution
+
+Key Observations:
+
+1.  **Clear "elbow":**
+
+    -   Sharp decrease when moving from 0 to 1 variable
+
+    -   Then flat - no benefit to adding more variables
+
+    -   Classic sign of correct model identified
+
+2.  **Wide stability region:**
+
+    -   From -Log(λ) ≈ -5 to -2.5, model stays at 1 variable
+
+    -   Error remains stable throughout
+
+    -   Robust model selection
+
+3.  **No spurious variables:**
+
+    -   Other correlated terms (X³, X⁵, X⁹) never enter
+
+    -   L1 penalty successfully suppresses noise
+
+    -   Even at low λ, stays at 1 variable
+
+4.  **Warning message explained:**
+
+"1 or less nonzero coefficients; glmnet plot is not meaningful"
+
+-   The coefficient paths plot can't show much with only 1 variable
+
+-   But this is actually **good news** - confirms sparsity!
+
+**Key Findings:**
+
+1.  **BIC and Lasso both succeeded** - correctly identified the sparse model
+
+2.  **BIC had more accurate coefficients** (no shrinkage bias)
+
+3.  **Lasso was more robust** to correlation structure
+
+4.  **Cp and Adjusted R² overfit** - included spurious correlated variables
+
+5.  **Much harder problem than Part 3-5:**
+
+    -   High-order polynomial term
+
+    -   Severe multicollinearity
+
+    -   Only sophisticated methods succeeded
+
+## Problem 9
+
+In this exercise, we will predict the number of applications received using the other variables in the College data set.
+
+```{r}
+library(ISLR)
+data("College")
+head(College)
+```
+
+#### 1. Split the data set into a training set and a test set.
+
+```{r}
+set.seed(123)  # For reproducibility
+
+# We'll use a 70-30 split, which is common practice
+train_indices <- sample(1:nrow(College), size = 0.7 * nrow(College))
+train_data <- College[train_indices, ]
+test_data <- College[-train_indices, ]
+
+cat("Training set size:", nrow(train_data), "\n")
+cat("Test set size:", nrow(test_data), "\n\n")
+```
+
+#### 2. Fit a linear model using least squares on the training set, and report the test error obtained.
+
+```{r}
+# Fit the model using all predictors
+lm_fit <- lm(Apps ~ ., data = train_data)
+
+# Make predictions on test set
+lm_pred <- predict(lm_fit, newdata = test_data)
+
+# Calculate test Mean Squared Error (MSE)
+lm_mse <- mean((test_data$Apps - lm_pred)^2)
+cat("Test MSE:", round(lm_mse, 2), "\n")
+cat("Test RMSE:", round(sqrt(lm_mse), 2), "\n\n")
+```
+
+Your ordinary least squares (OLS) linear regression model achieved a **test MSE of 1,734,841** and **test RMSE of 1,317.13 applications**.
+
+The **RMSE of 1,317** is the most interpretable number—it means your model's predictions are off by about 1,317 applications on average.
+
+Since the average college in your test set receives around 3,204 applications, an error of 1,317 represents roughly **41% of the mean**. This is reasonably accurate given that college application numbers vary widely (some colleges get hundreds of applications, others get tens of thousands).
+
+This error is calculated on the **test set**—colleges the model has never seen during training. This gives an honest assessment of how well the model will perform on new data. The test error is always what matters for evaluating real-world prediction performance.
+
+#### 3. Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+```{r}
+# Prepare matrices for glmnet (it requires matrix format, not data frames)
+# We need to convert factors to dummy variables
+x_train <- model.matrix(Apps ~ ., data = train_data)[, -1]  # Remove intercept
+y_train <- train_data$Apps
+x_test <- model.matrix(Apps ~ ., data = test_data)[, -1]
+y_test <- test_data$Apps
+
+# Perform cross-validation to find optimal lambda
+# alpha = 0 specifies ridge regression
+library(glmnet)
+ridge_cv <- cv.glmnet(x_train, y_train, alpha = 0)
+
+# Extract the best lambda value
+best_lambda_ridge <- ridge_cv$lambda.min
+cat("Optimal lambda (Ridge):", round(best_lambda_ridge, 4), "\n")
+
+# Fit ridge regression with best lambda
+ridge_fit <- glmnet(x_train, y_train, alpha = 0, lambda = best_lambda_ridge)
+
+# Make predictions
+ridge_pred <- predict(ridge_fit, s = best_lambda_ridge, newx = x_test)
+
+# Calculate test MSE
+ridge_mse <- mean((y_test - ridge_pred)^2)
+cat("Test MSE:", round(ridge_mse, 2), "\n")
+cat("Test RMSE:", round(sqrt(ridge_mse), 2), "\n\n")
+```
+
+Your ridge regression model achieved a **test MSE of 2,979,790** and **test RMSE of 1,726.21 applications**. The cross-validation selected an optimal lambda of 314.25.
+
+**Comparing to OLS**
+
+Ridge regression actually performed **worse** than the ordinary linear regression from Question 2:
+
+-   OLS test MSE: 1,734,841
+
+-   Ridge test MSE: 2,979,790
+
+Ridge increased the prediction error by about 409 applications on average.
+
+Ridge regression adds a penalty to shrink the coefficients, which is designed to help when predictors are highly correlated or when the model is overfitting. The worse performance here suggests that **the College dataset doesn't have severe multicollinearity or overfitting problems**.
+
+In this case, the penalty term introduced by ridge regression hurt more than it helped. The ordinary least squares approach was already doing a good job capturing the relationships in the data, and the additional regularization made predictions less accurate rather than more accurate.
+
+This is a valuable finding: more complex methods aren't always better. Sometimes simpler approaches work best.
+
+```{r}
+# Extract only numeric variables (excluding the Private factor variable)
+numeric_vars <- College[, sapply(College, is.numeric)]
+
+# Calculate correlation matrix
+cor_matrix <- cor(numeric_vars)
+
+# Define color palette
+col_palette <- colorRampPalette(c("darkred", "white", "darkblue"))(100)
+
+# Create the heatmap
+par(mar = c(7, 7, 3, 2))
+image(1:ncol(cor_matrix), 1:nrow(cor_matrix), 
+      t(cor_matrix[nrow(cor_matrix):1, ]),
+      col = col_palette,
+      xlab = "", ylab = "",
+      main = "Correlation Matrix Heatmap",
+      axes = FALSE)
+
+# Add variable names
+axis(1, at = 1:ncol(cor_matrix), labels = colnames(cor_matrix), 
+     las = 2, cex.axis = 0.7)
+axis(2, at = 1:nrow(cor_matrix), labels = rev(rownames(cor_matrix)), 
+     las = 1, cex.axis = 0.7)
+
+# Add grid
+abline(h = 0.5:(nrow(cor_matrix) + 0.5), col = "gray90", lwd = 0.5)
+abline(v = 0.5:(ncol(cor_matrix) + 0.5), col = "gray90", lwd = 0.5)
+
+# Add color legend
+par(new = TRUE, mar = c(7, 7, 3, 4))
+plot.new()
+legend("right", 
+       legend = c("1.0", "0.5", "0.0", "-0.5", "-1.0"),
+       fill = col_palette[c(100, 75, 50, 25, 1)],
+       title = "Correlation",
+       cex = 0.8,
+       bty = "n")
+```
+
+#### 4. Fit a lasso model on the training set, with λ chosen by cross validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+
+```{r}
+# Perform cross-validation to find optimal lambda
+# alpha = 1 specifies lasso regression
+lasso_cv <- cv.glmnet(x_train, y_train, alpha = 1)
+
+# Extract the best lambda value
+best_lambda_lasso <- lasso_cv$lambda.min
+cat("Optimal lambda (Lasso):", round(best_lambda_lasso, 4), "\n")
+
+# Fit lasso with best lambda
+lasso_fit <- glmnet(x_train, y_train, alpha = 1, lambda = best_lambda_lasso)
+
+# Make predictions
+lasso_pred <- predict(lasso_fit, s = best_lambda_lasso, newx = x_test)
+
+# Calculate test MSE
+lasso_mse <- mean((y_test - lasso_pred)^2)
+cat("Test MSE:", round(lasso_mse, 2), "\n")
+cat("Test RMSE:", round(sqrt(lasso_mse), 2), "\n")
+
+# Count non-zero coefficients (feature selection property of lasso)
+lasso_coef <- predict(lasso_fit, s = best_lambda_lasso, type = "coefficients")
+num_nonzero <- sum(lasso_coef != 0) - 1  # Subtract 1 for intercept
+cat("Number of non-zero coefficients:", num_nonzero, "\n\n")
+```
+
+Your lasso regression model achieved a **test MSE of 1,740,543** and **test RMSE of 1,319.3 applications**. The cross-validation selected an optimal lambda of 8.15, and the model retained **16 non-zero coefficients** out of the original predictors.
+
+Lasso performed much better than ridge regression and very similarly to OLS:
+
+-   OLS test MSE: 1,734,841
+
+-   Ridge test MSE: 2,979,790
+
+-   **Lasso test MSE: 1,740,543**
+
+The lasso is essentially tied with ordinary least squares (only about 6,000 higher MSE, which represents roughly 2 additional applications of error).
+
+The most interesting finding is that lasso reduced the model from 17 predictors down to **16 non-zero coefficients**. This means lasso determined that one predictor wasn't useful for prediction and eliminated it entirely by setting its coefficient to exactly zero.
+
+This is the key advantage of lasso over ridge: **automatic feature selection**. While ridge shrinks all coefficients but keeps them all in the model, lasso can eliminate variables completely. The fact that lasso achieved nearly identical performance to OLS while using slightly fewer predictors suggests it found a more parsimonious model—one that's simpler but equally effective.
+
+Lasso successfully identified that most predictors (16 out of 17) are genuinely useful for predicting applications, while one can be removed without hurting prediction accuracy. This gives you a slightly simpler, more interpretable model with essentially the same predictive power as using all variables.
+
+#### 5. Fit a PCR model on the training set, with M chosen by cross validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+# Fit PCR model with cross-validation to select M (number of components)
+# validation = "CV" performs 10-fold cross-validation by default
+library(pls)
+pcr_fit <- pcr(Apps ~ ., data = train_data, scale = TRUE, validation = "CV")
+
+# Find the optimal number of components (M)
+# validationplot(pcr_fit, val.type = "MSEP")  # Uncomment to visualize
+pcr_cv_mse <- MSEP(pcr_fit)$val[1, , ]  # Extract CV MSE values
+optimal_m_pcr <- which.min(pcr_cv_mse) - 1  # Subtract 1 because first value is intercept-only
+cat("Optimal M (number of components):", optimal_m_pcr, "\n")
+
+# Make predictions using optimal M
+pcr_pred <- predict(pcr_fit, newdata = test_data, ncomp = optimal_m_pcr)
+
+# Calculate test MSE
+pcr_mse <- mean((y_test - pcr_pred)^2)
+cat("Test MSE:", round(pcr_mse, 2), "\n")
+cat("Test RMSE:", round(sqrt(pcr_mse), 2), "\n\n")
+```
+
+Your PCR model achieved a **test MSE of 1,734,841** and **test RMSE of 1,317.13 applications**. Cross-validation selected **M = 17 components** as optimal.
+
+PCR performed identically to OLS:
+
+-   OLS test MSE: 1,734,841
+
+-   Ridge test MSE: 2,979,790
+
+-   Lasso test MSE: 1,740,543
+
+-   **PCR test MSE: 1,734,841**
+
+The most revealing finding here is that PCR selected **all 17 components**. Since you likely have 17 predictors in your dataset, this means PCR is using the full dimensional space without any dimension reduction at all.
+
+When PCR uses all available components, it becomes mathematically equivalent to ordinary least squares regression. The principal components are just a rotation of your original predictor space, and using all of them captures 100% of the variance in the predictors. This is why your test MSE is exactly the same as OLS.
+
+Cross-validation determined that no dimension reduction was beneficial for this dataset. All the principal components contain useful information for predicting applications, so there's no advantage to using a reduced set. This reinforces what we learned from the ridge and lasso results: the College dataset doesn't benefit from complexity reduction techniques. The straightforward approach of using all predictors works just as well as trying to simplify the model.
+
+#### 6. Fit a PLS model on the training set, with M chosen by cross validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+# Fit PLS model with cross-validation
+pls_fit <- plsr(Apps ~ ., data = train_data, scale = TRUE, validation = "CV")
+
+# Find the optimal number of components
+pls_cv_mse <- MSEP(pls_fit)$val[1, , ]
+optimal_m_pls <- which.min(pls_cv_mse) - 1
+cat("Optimal M (number of components):", optimal_m_pls, "\n")
+
+# Make predictions
+pls_pred <- predict(pls_fit, newdata = test_data, ncomp = optimal_m_pls)
+
+# Calculate test MSE
+pls_mse <- mean((y_test - pls_pred)^2)
+cat("Test MSE:", round(pls_mse, 2), "\n")
+cat("Test RMSE:", round(sqrt(pls_mse), 2), "\n\n")
+```
+
+Your PLS model achieved a **test MSE of 1,774,522** and **test RMSE of 1,332.11 applications**. Cross-validation selected **M = 8 components** as optimal.
+
+PLS performance falls in the middle range:
+
+-   OLS test MSE: 1,734,841
+
+-   Ridge test MSE: 2,979,790
+
+-   Lasso test MSE: 1,740,543
+
+-   PCR test MSE: 1,734,841
+
+-   **PLS test MSE: 1,774,522**
+
+PLS performed slightly worse than OLS, lasso, and PCR, but much better than ridge regression. The difference is small—only about 40,000 MSE or roughly 15 additional applications of error compared to OLS.
+
+Unlike PCR which used all 17 components, PLS achieved dimension reduction by selecting only **8 components**. This means PLS successfully compressed the information from 17 predictors into just 8 directions that it deemed most relevant for predicting applications.
+
+PLS differs from PCR in an important way: while PCR creates components based solely on the variation in the predictors, PLS creates components that consider both the predictors **and** the response variable (applications). This supervised approach often allows PLS to achieve effective dimension reduction where PCR cannot.
+
+PLS successfully reduced the dimensionality from 17 to 8 predictors while maintaining competitive performance. However, the slight increase in test error suggests that some useful information was lost in this reduction. For this dataset, using all the predictors (as in OLS and PCR) appears to be slightly better than trying to compress them into fewer dimensions.
+
+#### 7. Comment on the results obtained. How accurately can we predict the number of college applications received? Is there much difference among the test errors resulting from these five approaches?
+
+```{r}
+# Create a comparison table
+results <- data.frame(
+  Method = c("Linear Regression (OLS)", "Ridge Regression", 
+             "Lasso Regression", "PCR", "PLS"),
+  Test_MSE = c(lm_mse, ridge_mse, lasso_mse, pcr_mse, pls_mse),
+  Test_RMSE = sqrt(c(lm_mse, ridge_mse, lasso_mse, pcr_mse, pls_mse))
+)
+
+# Add model-specific information
+results$Additional_Info <- c(
+  paste("All", ncol(x_train), "predictors"),
+  paste("lambda =", round(best_lambda_ridge, 4)),
+  paste(num_nonzero, "non-zero coef"),
+  paste("M =", optimal_m_pcr, "components"),
+  paste("M =", optimal_m_pls, "components")
+)
+
+print(results)
+
+# Calculate average number of applications in test set for context
+cat("\nAverage number of applications in test set:", round(mean(y_test), 2), "\n")
+cat("Standard deviation of applications in test set:", round(sd(y_test), 2), "\n")
+
+# Calculate R-squared-like measure for best model
+best_method <- results$Method[which.min(results$Test_MSE)]
+best_mse <- min(results$Test_MSE)
+tss <- sum((y_test - mean(y_test))^2)
+pseudo_r2 <- 1 - (best_mse * length(y_test)) / tss
+
+cat("\nBest performing method:", best_method, "\n")
+cat("Pseudo R-squared on test set:", round(pseudo_r2, 4), "\n")
+cat("This means we can explain approximately", round(pseudo_r2 * 100, 1), 
+    "% of variance in applications.\n")
+```
+
+**Prediction Accuracy**
+
+We can predict the number of college applications **very accurately**. With an R-squared of 92.4%, our models explain over 90% of the variance in application numbers. The best models have an RMSE around 1,317 applications, which means predictions are typically off by about 1,300 applications. Given that the average college receives 3,204 applications with a standard deviation of 4,790, this represents excellent predictive performance—we're predicting within roughly 41% of the mean and 27% of one standard deviation.
+
+### Comparison of Methods
+
+There is **very little difference** among the test errors for most approaches:
+
+**Top Performers (virtually tied):**
+
+-   Linear Regression (OLS): 1,734,841 MSE
+
+-   PCR: 1,734,841 MSE (identical to OLS)
+
+-   Lasso: 1,740,543 MSE (only 0.3% worse)
+
+-   PLS: 1,774,522 MSE (only 2.3% worse)
+
+**Poor Performer:**
+
+-   Ridge Regression: 2,979,790 MSE (71.8% worse than OLS)
+
+### Key Insights
+
+1.  **Simplicity wins here**: Ordinary least squares performed best, suggesting the College dataset doesn't suffer from severe multicollinearity or overfitting that would make regularization beneficial.
+
+2.  **Ridge regression struggled**: The penalty introduced by ridge hurt more than it helped, indicating the predictor relationships are stable enough that shrinking coefficients uniformly was counterproductive.
+
+3.  **Lasso's feature selection didn't matter much**: Lasso eliminated only 1 predictor and achieved nearly identical performance to using all predictors, confirming that most variables in the dataset are genuinely useful.
+
+4.  **Dimension reduction wasn't needed**: PCR used all 17 components (equivalent to OLS), while PLS compressed to 8 components but with slightly worse performance. This suggests all predictors contain unique, valuable information.
+
+5.  **The predictors are good quality**: The fact that simple linear regression works so well indicates the College dataset has high-quality, relevant predictors with clear relationships to application numbers.
+
+## Problem 10
+
+We have seen that as the number of features used in a model increases, the training error will necessarily decrease, but the test error may not. We will now explore this in a simulated data set.
+
+1\. Generate a data set with p = 20 features, n = 1,000 observations, and an associated quantitative response vector generated according to the model Y= Xβ+ ϵ where β has some elements that are exactly equal to zero.
+
+2\. Split your data set into a training set containing 100 observations and a test set containing 900 observations.
+
+3\. Perform best subset selection on the training set, and plot the training set MSE associated with the best model of each size.
+
+4\. Plot the test set MSE associated with the best model of each size.
+
+5\. For which model size does the test set MSE take on its minimum value? Comment on your results. If it takes on its minimum value for a model containing only an intercept or a model containing all of the features, then play around with the way that you are generating the data in (1) until you come up with a scenario in which the test set MSE is minimized for an intermediate model size.
