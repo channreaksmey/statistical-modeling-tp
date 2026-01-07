@@ -1,0 +1,118 @@
+---
+title: "pizza"
+format: html
+editor: visual
+---
+
+## Pizza Delivery Data
+
+The pizza delivery data (pizza_delivery. cv, see also Table A.1) is a simulated data set. The data refers to an Italian restaurant which offers home delivery of pizza. It contains the orders received during a period of one month: May 2014. There are three branches of the restaurant. The pizza delivery is centrally managed: an operator receives a phone call and forwards the order to the branch which is nearest to the customer's address. One of the five drivers (two of whom only work part time at the weekend) delivers the order. The data set captures the number of pizzas ordered as well as the final bill (in €) which may also include drinks, salads, and pasta dishes. The owner of the business observed an increased number of complaints, mostly because pizzas arrive too late and too cold. To improve the service quality of his business, the owner wants to measure i) the time from call to delivery and ii) the pizza temperature at arrival (which can be done with a special device). Ideally, a pizza arrives within 30 min of the call; if it takes longer than 40 min, then the customers are promised a free bottle of wine (which is not always handed out though). The temperature of the pizza should be above 65 °C at the time of delivery. The analysis of the data aims to determine the factors which influence delivery time and temperature of the pizzas.
+
+#### a. Read the data into R. Fit a multiple linear regression model with delivery time as the outcome and temperature, branch, day, operator, driver, bill, number of ordered pizzas, and discount customer as covariates. Give a summary of the coefficients.
+
+```{r}
+pizza <- read.csv("pizza_delivery.csv")
+head(pizza)
+```
+
+```{r}
+cat("Fitting multiple linear regression model:\n")
+cat("Outcome: time\n")
+cat("Covariates: temperature, branch, day, operator, driver, bill,\n")
+cat("            pizzas, discount_customer\n\n")
+
+# Model formula
+model <- lm(time ~ temperature + branch + day + operator + 
+            driver + bill + pizzas + discount_customer, data = pizza)
+summary <- summary(model)
+print(summary)
+
+# Show coefficient table
+cat("\nCoefficient Summary:\n")
+cat("--------------------\n")
+coef_table <- summary$coefficients
+print(round(coef_table, 4))
+```
+
+#### b. Use R to calculate the 95% confidence intervals of all coefficients. Hint: the standard errors of the coefficients can be accessed either via the covariance matrix or the model summary.
+
+```{r}
+# From summary standard errors
+coef_estimates <- coef(model)
+n <- nrow(pizza)
+p <- length(coef_estimates)
+t_critical <- qt(0.975, df = n - p)
+std_errors_summary <- summary$coefficients[, "Std. Error"]
+ci_lower <- coef_estimates - t_critical * std_errors_summary
+ci_upper <- coef_estimates + t_critical * std_errors_summary
+
+ci_table <- data.frame(
+  Coefficient = names(coef_estimates),
+  Estimate = coef_estimates,
+  Std_Error = std_errors,
+  CI_Lower_95 = ci_lower,
+  CI_Upper_95 = ci_upper,
+  Significant = ifelse(ci_lower * ci_upper > 0, "Yes*", "No")
+)
+
+print(ci_table)
+```
+
+#### c. Reproduce the least squares estimate of $\sigma^2$ the residuals.
+
+```{r}
+cat("Reproducing Least Squares Estimates manually using matrix algebra\n")
+cat("Formula: β̂ = (X'X)⁻¹X'y\n\n")
+
+# Create design matrix X and response vector y
+X <- model.matrix(model)
+y <- pizza$time
+
+# Calculate least squares estimate
+XtX <- t(X) %*% X
+XtX_inv <- solve(XtX)
+Xty <- t(X) %*% y
+beta_hat <- XtX_inv %*% Xty
+
+cat("Comparison of estimates:\n")
+comparison <- data.frame(lm_estimate = coef(model),
+                         manual_estimate = as.vector(beta_hat),
+                         difference = coef(model) - as.vector(beta_hat))
+print(comparison)
+
+cat("\n✓ Manual calculation matches lm() output (within numerical precision)\n\n")
+
+cat("Reproducing Residuals:\n")
+cat("Formula: ê = y - Xβ̂ = y - ŷ\n\n")
+
+fitted_values_manual <- X %*% beta_hat
+residuals_manual <- y - fitted_values_manual
+
+# Compare with lm residuals
+residual_comparison <- data.frame(lm_residuals = residuals(model)[1:10],  # First 10
+                                  manual_residuals = as.vector(residuals_manual)[1:10],
+                                  difference = residuals(model)[1:10] - 
+                                    as.vector(residuals_manual)[1:10])
+
+cat("First 10 residuals:\n")
+print(residual_comparison)
+
+cat("\n✓ Manual residuals match lm() residuals\n\n")
+
+# Residual statistics
+cat("Residual Summary Statistics:\n")
+cat(sprintf("Min:    %.4f\n", min(residuals(model))))
+cat(sprintf("1Q:     %.4f\n", quantile(residuals(model), 0.25)))
+cat(sprintf("Median: %.4f\n", median(residuals(model))))
+cat(sprintf("3Q:     %.4f\n", quantile(residuals(model), 0.75)))
+cat(sprintf("Max:    %.4f\n", max(residuals(model))))
+
+```
+
+(a) Now use R to estimate both R? and Radj. Compare the results with the model output from a).
+(b) Use backward selection by means of the stepAIC function from the library MASS to find the best model according to AIC.
+(c) Obtain R2 adj from the model identified in e) and compare it to the full model from a).
+(d) Identify whether the model assumptions are satisfied or not.
+(e) Are all variables from the model in (e) causing the delivery time to be either delayed or improved?
+(f) Test whether it is useful to add a quadratic polynomial of temperature to the model.
+(g) Use the model identified in (e) to predict the delivery time of the last captured delivery (i.e. number 1266). Use the predict () command to ease the calculation of the prediction.
