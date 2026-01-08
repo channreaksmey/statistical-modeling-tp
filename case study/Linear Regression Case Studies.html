@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Ny Chantharith">
+<meta name="dcterms.date" content="2026-01-08">
+
+<title>Linear Regression Case Studies</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Linear Regression Case Studies_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Linear Regression Case Studies_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Linear Regression Case Studies_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Linear Regression Case Studies_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="Linear Regression Case Studies_files/libs/quarto-html/popper.min.js"></script>
+<script src="Linear Regression Case Studies_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Linear Regression Case Studies_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Linear Regression Case Studies_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Linear Regression Case Studies_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Linear Regression Case Studies_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Linear Regression Case Studies_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Linear Regression Case Studies_files/libs/bootstrap/bootstrap-d6a003b94517c951b2d65075d42fb01b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#case-study-1-biomass" id="toc-case-study-1-biomass" class="nav-link active" data-scroll-target="#case-study-1-biomass"><span class="header-section-number">1</span> Case Study 1: Biomass</a></li>
+  <li><a href="#data-and-ideas-for-this-case-study-come-from-goicoa-et-al.-2011." id="toc-data-and-ideas-for-this-case-study-come-from-goicoa-et-al.-2011." class="nav-link" data-scroll-target="#data-and-ideas-for-this-case-study-come-from-goicoa-et-al.-2011."><span class="header-section-number">1.1</span> Data and ideas for this case study come from (Goicoa et al., 2011).</a></li>
+  <li><a href="#create-a-scatterplot-of-above-weight-versus-diameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created." id="toc-create-a-scatterplot-of-above-weight-versus-diameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created." class="nav-link" data-scroll-target="#create-a-scatterplot-of-above-weight-versus-diameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created."><span class="header-section-number">1.1.1</span> Create a scatterplot of above weight versus diameter. Is the relationship linear? Superimpose a regression line over the plot just created.</a></li>
+  <li><a href="#create-a-scatterplot-of-logaboveweight-versus-logdiameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created." id="toc-create-a-scatterplot-of-logaboveweight-versus-logdiameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created." class="nav-link" data-scroll-target="#create-a-scatterplot-of-logaboveweight-versus-logdiameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created."><span class="header-section-number">1.1.2</span> Create a scatterplot of log(aboveweight) versus log(diameter). Is the relationship linear? Superimpose a regression line over the plot just created.</a></li>
+  <li><a href="#fit-the-regression-model-and-compute-r2-r2_a-and-the-variance-of-the-residuals." id="toc-fit-the-regression-model-and-compute-r2-r2_a-and-the-variance-of-the-residuals." class="nav-link" data-scroll-target="#fit-the-regression-model-and-compute-r2-r2_a-and-the-variance-of-the-residuals."><span class="header-section-number">1.1.3</span> Fit the regression model, and compute <span class="math inline">\(R^2\)</span>, <span class="math inline">\(R^2_a\)</span> , and the variance of the residuals.</a></li>
+  <li><a href="#introduce-logtextheight-as-an-explanatory-variable-and-fit-the-model.-what-is-the-effect-of-introducing-logtextheight-in-the-model" id="toc-introduce-logtextheight-as-an-explanatory-variable-and-fit-the-model.-what-is-the-effect-of-introducing-logtextheight-in-the-model" class="nav-link" data-scroll-target="#introduce-logtextheight-as-an-explanatory-variable-and-fit-the-model.-what-is-the-effect-of-introducing-logtextheight-in-the-model"><span class="header-section-number">1.1.4</span> Introduce <span class="math inline">\(\log(\text{height})\)</span> as an explanatory variable and fit the model. What is the effect of introducing <span class="math inline">\(\log(\text{height})\)</span> in the model?</a></li>
+  <li><a href="#complete-the-analysis-questions-for-the-model-in-1.1.4." id="toc-complete-the-analysis-questions-for-the-model-in-1.1.4." class="nav-link" data-scroll-target="#complete-the-analysis-questions-for-the-model-in-1.1.4."><span class="header-section-number">1.1.5</span> Complete the Analysis questions for the model in (1.1.4).</a></li>
+  <li><a href="#prediction-with-bias-correction" id="toc-prediction-with-bias-correction" class="nav-link" data-scroll-target="#prediction-with-bias-correction"><span class="header-section-number">1.1.6</span> Prediction with Bias Correction</a></li>
+  <li><a href="#case-study-2-fruit-trees" id="toc-case-study-2-fruit-trees" class="nav-link" data-scroll-target="#case-study-2-fruit-trees"><span class="header-section-number">2</span> Case Study 2: Fruit Trees</a></li>
+  <li><a href="#data-and-ideas-for-this-case-study-come-from-militino-et-al.-2006." id="toc-data-and-ideas-for-this-case-study-come-from-militino-et-al.-2006." class="nav-link" data-scroll-target="#data-and-ideas-for-this-case-study-come-from-militino-et-al.-2006."><span class="header-section-number">2.1</span> Data and ideas for this case study come from Militino et al.&nbsp;(2006).</a></li>
+  <li><a href="#characterize-the-shape-center-and-spread-for-the-variable-fruit." id="toc-characterize-the-shape-center-and-spread-for-the-variable-fruit." class="nav-link" data-scroll-target="#characterize-the-shape-center-and-spread-for-the-variable-fruit."><span class="header-section-number">2.1.1</span> Characterize the shape, center, and spread for the variable <strong>fruit</strong>.</a></li>
+  <li><a href="#the-maximum-number-of-m2-of-classified-fruits-by-segment" id="toc-the-maximum-number-of-m2-of-classified-fruits-by-segment" class="nav-link" data-scroll-target="#the-maximum-number-of-m2-of-classified-fruits-by-segment"><span class="header-section-number">2.1.2</span> The maximum number of <span class="math inline">\(m^2\)</span> of classified fruits by segment</a></li>
+  <li><a href="#how-many-observations-are-there-by-small-area" id="toc-how-many-observations-are-there-by-small-area" class="nav-link" data-scroll-target="#how-many-observations-are-there-by-small-area"><span class="header-section-number">2.1.3</span> How many observations are there by small area?</a></li>
+  <li><a href="#use-scatterplotmatrix-from-car-or-pairs-to-explore-the-linear-relationships-between-observed-and-the-remainder-of-the-numerical-variables.-comment-on-the-results." id="toc-use-scatterplotmatrix-from-car-or-pairs-to-explore-the-linear-relationships-between-observed-and-the-remainder-of-the-numerical-variables.-comment-on-the-results." class="nav-link" data-scroll-target="#use-scatterplotmatrix-from-car-or-pairs-to-explore-the-linear-relationships-between-observed-and-the-remainder-of-the-numerical-variables.-comment-on-the-results."><span class="header-section-number">2.1.4</span> Use <strong>scatterplotMatrix()</strong> from car or <strong>pairs()</strong> to explore the linear relationships between observed and the remainder of the numerical variables. Comment on the results.</a></li>
+  <li><a href="#create-density-plots-of-the-observed-fruits-surface-area-observed-by-small-areas-smallarea." id="toc-create-density-plots-of-the-observed-fruits-surface-area-observed-by-small-areas-smallarea." class="nav-link" data-scroll-target="#create-density-plots-of-the-observed-fruits-surface-area-observed-by-small-areas-smallarea."><span class="header-section-number">2.1.5</span> Create density plots of the observed fruits’ surface area (Observed) by small areas (smallarea).</a></li>
+  <li><a href="#use-boxplots-and-barplots-with-standard-errors-to-compare-the-observed-surface-area-observed-and-the-classified-surface-area-fruit-by-small-areas-smallarea" id="toc-use-boxplots-and-barplots-with-standard-errors-to-compare-the-observed-surface-area-observed-and-the-classified-surface-area-fruit-by-small-areas-smallarea" class="nav-link" data-scroll-target="#use-boxplots-and-barplots-with-standard-errors-to-compare-the-observed-surface-area-observed-and-the-classified-surface-area-fruit-by-small-areas-smallarea"><span class="header-section-number">2.1.6</span> Use boxplots and barplots with standard errors to compare the observed surface area (observed) and the classified surface area (fruit) by small areas (smallarea)</a></li>
+  <li><a href="#compute-the-correlation-between-observed-and-all-other-numerical-variables.-list-the-three-variables-in-order-along-with-their-correlation-coefficient-that-have-the-highest-correlation-with-observed." id="toc-compute-the-correlation-between-observed-and-all-other-numerical-variables.-list-the-three-variables-in-order-along-with-their-correlation-coefficient-that-have-the-highest-correlation-with-observed." class="nav-link" data-scroll-target="#compute-the-correlation-between-observed-and-all-other-numerical-variables.-list-the-three-variables-in-order-along-with-their-correlation-coefficient-that-have-the-highest-correlation-with-observed."><span class="header-section-number">2.1.7</span> Compute the correlation between observed and all other numerical variables. List the three variables in order along with their correlation coefficient that have the highest correlation with observed.</a></li>
+  <li><a href="#model-a" id="toc-model-a" class="nav-link" data-scroll-target="#model-a"><span class="header-section-number">2.2</span> Model (A)</a>
+  <ul class="collapse">
+  <li><a href="#compute-textcv_n-the-leave-one-out-cross-validation-error-for-modela.-set-the-seed-to-5-and-compute-textcv_5-the-five-fold-cross-validation-error-for-modela.-the-cross-validation-error-for-a-generalized-linear-model-can-be-computed-using-the-cv.glm-function-from-the-boot-package.-using-the-function-glm-without-passing-a-family-argument-is-equivalent-to-using-the-function-lm.-r-code-1-provides-a-template-for-how-to-use-the-cv.glm-function.-note-that-textcv_n-is-returned-with-cv.errordelta1.-to-compute-textcv_5-pass-the-value-5-to-the-argument-k-inside-the-cv.glm-function." id="toc-compute-textcv_n-the-leave-one-out-cross-validation-error-for-modela.-set-the-seed-to-5-and-compute-textcv_5-the-five-fold-cross-validation-error-for-modela.-the-cross-validation-error-for-a-generalized-linear-model-can-be-computed-using-the-cv.glm-function-from-the-boot-package.-using-the-function-glm-without-passing-a-family-argument-is-equivalent-to-using-the-function-lm.-r-code-1-provides-a-template-for-how-to-use-the-cv.glm-function.-note-that-textcv_n-is-returned-with-cv.errordelta1.-to-compute-textcv_5-pass-the-value-5-to-the-argument-k-inside-the-cv.glm-function." class="nav-link" data-scroll-target="#compute-textcv_n-the-leave-one-out-cross-validation-error-for-modela.-set-the-seed-to-5-and-compute-textcv_5-the-five-fold-cross-validation-error-for-modela.-the-cross-validation-error-for-a-generalized-linear-model-can-be-computed-using-the-cv.glm-function-from-the-boot-package.-using-the-function-glm-without-passing-a-family-argument-is-equivalent-to-using-the-function-lm.-r-code-1-provides-a-template-for-how-to-use-the-cv.glm-function.-note-that-textcv_n-is-returned-with-cv.errordelta1.-to-compute-textcv_5-pass-the-value-5-to-the-argument-k-inside-the-cv.glm-function."><span class="header-section-number">2.2.1</span> Compute <span class="math inline">\(\text{CV}_n\)</span>, the leave-one-out cross-validation error, for modelA. Set the seed to 5 and compute <span class="math inline">\(\text{CV}_5\)</span>, the five-fold cross-validation error, for modelA. The cross-validation error for a generalized linear model can be computed using the cv.glm() function from the boot package. Using the function glm() without passing a family argument is equivalent to using the function lm(). R Code 1 provides a template for how to use the cv.glm() function. Note that <span class="math inline">\(\text{CV}_n\)</span> is returned with cv.error$delta[1]. To compute <span class="math inline">\(\text{CV}_5\)</span>, pass the value 5 to the argument <span class="math inline">\(K\)</span> inside the cv.glm() function.</a></li>
+  <li><a href="#compute-r2-r2-_a-and-aic-and-the-bic-for-model-a.-what-is-the-proportion-of-total-variability-explained-by-model-a" id="toc-compute-r2-r2-_a-and-aic-and-the-bic-for-model-a.-what-is-the-proportion-of-total-variability-explained-by-model-a" class="nav-link" data-scroll-target="#compute-r2-r2-_a-and-aic-and-the-bic-for-model-a.-what-is-the-proportion-of-total-variability-explained-by-model-a"><span class="header-section-number">2.2.2</span> Compute <span class="math inline">\(R^2\)</span>, <span class="math inline">\(R^2 _a\)</span>, and AIC, and the BIC for Model (A). What is the proportion of total variability explained by Model (A)</a></li>
+  </ul></li>
+  <li><a href="#model-b" id="toc-model-b" class="nav-link" data-scroll-target="#model-b"><span class="header-section-number">2.3</span> Model (B)</a></li>
+  <li><a href="#model-c" id="toc-model-c" class="nav-link" data-scroll-target="#model-c"><span class="header-section-number">2.4</span> Model (C)</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Linear Regression Case Studies</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Ny Chantharith </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 8, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="case-study-1-biomass" class="level1" style="text-decoration-line: underline;" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Case Study 1: Biomass</h1>
+</section>
+<section id="data-and-ideas-for-this-case-study-come-from-goicoa-et-al.-2011." class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="data-and-ideas-for-this-case-study-come-from-goicoa-et-al.-2011."><span class="header-section-number">1.1</span> Data and ideas for this case study come from (Goicoa et al., 2011).</h2>
+</section>
+<p>To estimate the amount of carbon dioxide retained in a tree, its biomass needs to be known and multiplied by an expansion factor (there are several alternatives in the literature). To calculate the biomass, specific regression equations by species are frequently used. These regression equations, called allometric equations, estimate the biomass of the tree by means of some known characteristics, typically diameter and/or height of the stem and branches. The BIOMASS file contains data of 42 beeches (Fagus Sylvatica) from a forest of Navarra (Spain) in 2006, where</p>
+<ul>
+<li><p><strong>diameter</strong>: diameter of the stem in centimeters</p></li>
+<li><p><strong>height</strong>: height of the tree in meters</p></li>
+<li><p><strong>stemweight</strong>: weight of the stem in kilograms</p></li>
+<li><p><strong>aboveweight</strong>: aboveground weight in kilograms</p></li>
+</ul>
+<hr>
+<section id="create-a-scatterplot-of-above-weight-versus-diameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created." class="level3" data-number="1.1.1">
+<h3 data-number="1.1.1" class="anchored" data-anchor-id="create-a-scatterplot-of-above-weight-versus-diameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created."><span class="header-section-number">1.1.1</span> Create a scatterplot of above weight versus diameter. Is the relationship linear? Superimpose a regression line over the plot just created.</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(PASWR)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(biomass)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(biomass)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   42 obs. of  4 variables:
+ $ Dn : int  40 32 22 45 37 37 45 25 47 63 ...
+ $ H  : num  18.5 18.8 13.2 20.5 17.5 19.8 20.5 17.3 20.7 25.1 ...
+ $ PST: num  647 397 132 810 510 ...
+ $ PSA: num  1048 560 221 1280 682 ...</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(biomass)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Dn    H    PST     PSA
+1 40 18.5 647.36 1047.97
+2 32 18.8 396.51  559.89
+3 22 13.2 131.78  221.06
+4 45 20.5 810.36 1279.54
+5 37 17.5 510.37  682.30
+6 37 19.8 456.04  645.61</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(biomass)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       Dn              H              PST               PSA         
+ Min.   :10.00   Min.   :13.20   Min.   :  28.32   Min.   :  37.28  
+ 1st Qu.:25.75   1st Qu.:18.57   1st Qu.: 232.07   1st Qu.: 315.66  
+ Median :37.00   Median :22.80   Median : 685.51   Median : 878.15  
+ Mean   :37.45   Mean   :22.54   Mean   : 809.86   Mean   :1130.71  
+ 3rd Qu.:46.50   3rd Qu.:26.82   3rd Qu.:1038.81   3rd Qu.:1456.43  
+ Max.   :75.00   Max.   :30.90   Max.   :2669.20   Max.   :3898.49  </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(biomass<span class="sc">$</span>Dn, biomass<span class="sc">$</span>PSA,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"Diameter (cm)"</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">"Aboveground Biomass (kg)"</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Aboveground Biomass vs Diameter"</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="fu">lm</span>(PSA <span class="sc">~</span> Dn, <span class="at">data =</span> biomass),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>After applying a logarithmic transformation to both variables, the relationship becomes approximately <strong>linear</strong>, indicating that an allometric (power-law) model is appropriate.</p>
+</section>
+<section id="create-a-scatterplot-of-logaboveweight-versus-logdiameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created." class="level3" data-number="1.1.2">
+<h3 data-number="1.1.2" class="anchored" data-anchor-id="create-a-scatterplot-of-logaboveweight-versus-logdiameter.-is-the-relationship-linear-superimpose-a-regression-line-over-the-plot-just-created."><span class="header-section-number">1.1.2</span> Create a scatterplot of log(aboveweight) versus log(diameter). Is the relationship linear? Superimpose a regression line over the plot just created.</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">log</span>(biomass<span class="sc">$</span>Dn), <span class="fu">log</span>(biomass<span class="sc">$</span>PSA),</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"log(Diameter"</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">"log(Aboveground Biomass"</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Log-Log Relationship"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="fu">lm</span>(<span class="fu">log</span>(PSA) <span class="sc">~</span> <span class="fu">log</span>(Dn), <span class="at">data =</span> biomass),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The log–log transformation linearizes the relationship between diameter and aboveground biomass. The strong linear trend and small dispersion around the fitted line suggest that a log-linear regression model is appropriate.</p>
+</section>
+<section id="fit-the-regression-model-and-compute-r2-r2_a-and-the-variance-of-the-residuals." class="level3" data-number="1.1.3">
+<h3 data-number="1.1.3" class="anchored" data-anchor-id="fit-the-regression-model-and-compute-r2-r2_a-and-the-variance-of-the-residuals."><span class="header-section-number">1.1.3</span> Fit the regression model, and compute <span class="math inline">\(R^2\)</span>, <span class="math inline">\(R^2_a\)</span> , and the variance of the residuals.</h3>
+<p><span class="math display">\[
+\log(\text{aboveweight})=\beta_0+\beta_1\log(\text{diameter})
+\]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>model1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">log</span>(PSA) <span class="sc">~</span> <span class="fu">log</span>(Dn), <span class="at">data =</span> biomass)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = log(PSA) ~ log(Dn), data = biomass)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.48510 -0.12682  0.02701  0.10766  0.32104 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  -1.5015     0.1920  -7.822 1.38e-09 ***
+log(Dn)       2.2806     0.0542  42.076  &lt; 2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.1842 on 40 degrees of freedom
+Multiple R-squared:  0.9779,    Adjusted R-squared:  0.9774 
+F-statistic:  1770 on 1 and 40 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>R2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(model1)<span class="sc">$</span>r.squared</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>R2_adj <span class="ot">&lt;-</span> <span class="fu">summary</span>(model1)<span class="sc">$</span>adj.r.squared</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>sigma2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(model1)<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"R squared:"</span>, R2, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>R squared: 0.9779049 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Adjusted R squared:"</span>, R2_adj, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Adjusted R squared: 0.9773525 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Variance:"</span>, sigma2, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Variance: 0.03394252 </code></pre>
+</div>
+</div>
+</section>
+<section id="introduce-logtextheight-as-an-explanatory-variable-and-fit-the-model.-what-is-the-effect-of-introducing-logtextheight-in-the-model" class="level3" data-number="1.1.4">
+<h3 data-number="1.1.4" class="anchored" data-anchor-id="introduce-logtextheight-as-an-explanatory-variable-and-fit-the-model.-what-is-the-effect-of-introducing-logtextheight-in-the-model"><span class="header-section-number">1.1.4</span> Introduce <span class="math inline">\(\log(\text{height})\)</span> as an explanatory variable and fit the model. What is the effect of introducing <span class="math inline">\(\log(\text{height})\)</span> in the model?</h3>
+<p><span class="math display">\[
+\log(\text{aboveweight})=\beta_0+\beta_1\log(\text{diameter})+\beta_2\log(\text{height})
+\]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">log</span>(PSA) <span class="sc">~</span> <span class="fu">log</span>(Dn) <span class="sc">+</span> <span class="fu">log</span>(H), <span class="at">data =</span> biomass)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = log(PSA) ~ log(Dn) + log(H), data = biomass)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.26519 -0.11243 -0.01637  0.07720  0.38024 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) -2.77706    0.31976  -8.685 1.18e-10 ***
+log(Dn)      2.17779    0.04965  43.867  &lt; 2e-16 ***
+log(H)       0.52918    0.11561   4.577 4.71e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.1505 on 39 degrees of freedom
+Multiple R-squared:  0.9856,    Adjusted R-squared:  0.9849 
+F-statistic:  1337 on 2 and 39 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>Including log(height) significantly improves the model by reducing residual variability and increasing explanatory power. While diameter remains the dominant predictor of aboveground biomass, height provides additional information that enhances model accuracy.</p>
+</section>
+<section id="complete-the-analysis-questions-for-the-model-in-1.1.4." class="level3" data-number="1.1.5">
+<h3 data-number="1.1.5" class="anchored" data-anchor-id="complete-the-analysis-questions-for-the-model-in-1.1.4."><span class="header-section-number">1.1.5</span> Complete the Analysis questions for the model in (1.1.4).</h3>
+<div style="text-decoration-line: underline; text-align:center;">
+<p><strong>Analysis questions:</strong></p>
+</div>
+<section id="estimate-the-models-parameters-and-their-standard-errors.-provide-an-interpretation-for-the-models-parameters." class="level4" data-number="1.1.5.1">
+<h4 data-number="1.1.5.1" class="anchored" data-anchor-id="estimate-the-models-parameters-and-their-standard-errors.-provide-an-interpretation-for-the-models-parameters."><span class="header-section-number">1.1.5.1</span> Estimate the model’s parameters and their standard errors. Provide an interpretation for the model’s parameters.</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = log(PSA) ~ log(Dn) + log(H), data = biomass)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.26519 -0.11243 -0.01637  0.07720  0.38024 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) -2.77706    0.31976  -8.685 1.18e-10 ***
+log(Dn)      2.17779    0.04965  43.867  &lt; 2e-16 ***
+log(H)       0.52918    0.11561   4.577 4.71e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.1505 on 39 degrees of freedom
+Multiple R-squared:  0.9856,    Adjusted R-squared:  0.9849 
+F-statistic:  1337 on 2 and 39 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<ul>
+<li><p><strong>Diameter effect (</strong><span class="math inline">\(\beta_1\)</span>​) The coefficient of log(diameter) is positive and highly statistically significant (<span class="math inline">\(\text{p-value} &lt; 2 × 10^{-16}\)</span>). This indicates that, holding height constant, a <strong>1% increase in tree diameter is associated with an average increase of approximately 2.18% in aboveground biomass</strong>.</p></li>
+<li><p><strong>Height effect (</strong><span class="math inline">\(\beta_2\)</span>)<br>
+The coefficient of log(height) is also positive and statistically significant (<span class="math inline">\(\text{p-value} &lt; 4.71 × 10^{-5}\)</span>).<br>
+This implies that, holding diameter constant, a <strong>1% increase in tree height leads to an average increase of about 0.53% in aboveground biomass</strong>.</p></li>
+<li><p><strong>Intercept (</strong><span class="math inline">\(\beta_0\)</span>)<br>
+The intercept represents the expected value of log(PSA) when both diameter and height equal one. Although it has no direct biological interpretation, it is necessary to correctly position the regression surface.</p></li>
+</ul>
+</section>
+<section id="compute-the-variance-covariance-matrix-of-the-hatbeta_s" class="level4" data-number="1.1.5.2">
+<h4 data-number="1.1.5.2" class="anchored" data-anchor-id="compute-the-variance-covariance-matrix-of-the-hatbeta_s"><span class="header-section-number">1.1.5.2</span> Compute the variance-covariance matrix of the <span class="math inline">\(\hat{\beta_s}\)</span></h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vcov</span>(model2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>              (Intercept)       log(Dn)       log(H)
+(Intercept)  0.1022432727 -0.0006066342 -0.032216921
+log(Dn)     -0.0006066342  0.0024646465 -0.002596642
+log(H)      -0.0322169214 -0.0025966423  0.013365634</code></pre>
+</div>
+</div>
+</section>
+<section id="provide-95-confidence-intervals-for-beta_1-and-beta_2." class="level4" data-number="1.1.5.3">
+<h4 data-number="1.1.5.3" class="anchored" data-anchor-id="provide-95-confidence-intervals-for-beta_1-and-beta_2."><span class="header-section-number">1.1.5.3</span> Provide 95% confidence intervals for <span class="math inline">\(\beta_1\)</span> and <span class="math inline">\(\beta_2\)</span>.</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(model2, <span class="at">level =</span> <span class="fl">0.95</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 2.5 %     97.5 %
+(Intercept) -3.4238270 -2.1302958
+log(Dn)      2.0773698  2.2782036
+log(H)       0.2953374  0.7630233</code></pre>
+</div>
+</div>
+</section>
+<section id="compute-the-r2-r2_a-and-the-residual-variance." class="level4" data-number="1.1.5.4">
+<h4 data-number="1.1.5.4" class="anchored" data-anchor-id="compute-the-r2-r2_a-and-the-residual-variance."><span class="header-section-number">1.1.5.4</span> Compute the <span class="math inline">\(R^2\)</span>, <span class="math inline">\(R^2_a\)</span> and the residual variance.</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>R2_m2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(model2)<span class="sc">$</span>r.squared</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>R2_adj_m2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(model2)<span class="sc">$</span>adj.r.squared</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>sigma2_m2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(model2)<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"R squared:"</span>, R2_m2, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>R squared: 0.9856266 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Adjusted R squared:"</span>, R2_adj_m2, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Adjusted R squared: 0.9848895 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Variance:"</span>, sigma2_m2, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Variance: 0.0226466 </code></pre>
+</div>
+</div>
+</section>
+<section id="construct-a-graph-with-the-default-diagnostics-plots-of-r." class="level4" data-number="1.1.5.5">
+<h4 data-number="1.1.5.5" class="anchored" data-anchor-id="construct-a-graph-with-the-default-diagnostics-plots-of-r."><span class="header-section-number">1.1.5.5</span> Construct a graph with the default diagnostics plots of R.</h4>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(model2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="can-homogeneity-of-variance-be-assumed" class="level4" data-number="1.1.5.6">
+<h4 data-number="1.1.5.6" class="anchored" data-anchor-id="can-homogeneity-of-variance-be-assumed"><span class="header-section-number">1.1.5.6</span> Can homogeneity of variance be assumed?</h4>
+<p>Homogeneity of variance can be assumed. From the <strong>Scale–Location plot</strong>, the spread of the residuals is fairly constant across the fitted values, and no clear funnel-shaped pattern is observed. This indicates that the assumption of constant variance is reasonable.</p>
+</section>
+<section id="do-the-residuals-appear-to-follow-a-normal-distribution" class="level4" data-number="1.1.5.7">
+<h4 data-number="1.1.5.7" class="anchored" data-anchor-id="do-the-residuals-appear-to-follow-a-normal-distribution"><span class="header-section-number">1.1.5.7</span> Do the residuals appear to follow a normal distribution?</h4>
+<p>The residuals appear to follow a normal distribution. From the <strong>Q–Q plot</strong>, the residuals lie close to the reference straight line, with only small deviations at the tails. This suggests that the normality assumption is reasonably satisfied.</p>
+</section>
+<section id="are-there-any-outliers-in-the-data" class="level4" data-number="1.1.5.8">
+<h4 data-number="1.1.5.8" class="anchored" data-anchor-id="are-there-any-outliers-in-the-data"><span class="header-section-number">1.1.5.8</span> Are there any outliers in the data?</h4>
+<p>Most standardized residuals lie within the range <span class="math inline">\(-2\)</span> to <span class="math inline">\(2\)</span>, and none are extremely large. This indicates that there are no severe outliers in the dataset.</p>
+</section>
+<section id="are-there-any-influential-observations-in-the-data" class="level4" data-number="1.1.5.9">
+<h4 data-number="1.1.5.9" class="anchored" data-anchor-id="are-there-any-influential-observations-in-the-data"><span class="header-section-number">1.1.5.9</span> Are there any influential observations in the data?</h4>
+<p>From the <strong>Residuals vs Leverage plot</strong>, all observations lie well below the Cook’s distance reference lines. This indicates that no single observation has a strong influence on the fitted model.</p>
+</section>
+</section>
+<section id="prediction-with-bias-correction" class="level3" data-number="1.1.6">
+<h3 data-number="1.1.6" class="anchored" data-anchor-id="prediction-with-bias-correction"><span class="header-section-number">1.1.6</span> Prediction with Bias Correction</h3>
+<p>Predictions are required for:</p>
+<ul>
+<li><p><span class="math inline">\(\text{diameter} = \text{seq}(12.5, 42.5, 5)\)</span></p></li>
+<li><p><span class="math inline">\(\text{height} = \text{seq}(10, 40, 5)\)</span></p></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>newdata <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Dn =</span> <span class="fu">seq</span>(<span class="fl">12.5</span>, <span class="fl">42.5</span>, <span class="dv">5</span>),</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">H =</span> <span class="fu">seq</span>(<span class="dv">10</span>, <span class="dv">40</span>, <span class="dv">5</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>pred_log <span class="ot">&lt;-</span> <span class="fu">predict</span>(model2, <span class="at">newdata =</span> newdata)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>sigma2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(model2)<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>pred_corrected <span class="ot">&lt;-</span> <span class="fu">exp</span>(pred_log <span class="sc">+</span> sigma2 <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  newdata,</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Predicted_PSA =</span> pred_corrected</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Dn  H Predicted_PSA
+1  12.5 10      52.10406
+2  17.5 10     108.41945
+3  22.5 10     187.41338
+4  27.5 10     290.13163
+5  32.5 10     417.44086
+6  37.5 10     570.08529
+7  42.5 10     748.71965
+8  12.5 15      64.57368
+9  17.5 15     134.36658
+10 22.5 15     232.26546
+11 27.5 15     359.56641
+12 32.5 15     517.34349
+13 37.5 15     706.51904
+14 42.5 15     927.90446
+15 12.5 20      75.19184
+16 17.5 20     156.46110
+17 22.5 20     270.45795
+18 27.5 20     418.69159
+19 32.5 20     602.41269
+20 37.5 20     822.69525
+21 42.5 20    1080.48411
+22 12.5 25      84.61621
+23 17.5 25     176.07158
+24 22.5 25     304.35653
+25 27.5 25     471.16943
+26 32.5 25     677.91772
+27 37.5 25     925.81000
+28 42.5 25    1215.90952
+29 12.5 30      93.18687
+30 17.5 30     193.90563
+31 22.5 30     335.18438
+32 27.5 30     518.89354
+33 32.5 30     746.58308
+34 37.5 30    1019.58403
+35 42.5 30    1339.06734
+36 12.5 35     101.10710
+37 17.5 35     210.38624
+38 22.5 35     363.67270
+39 27.5 35     562.99585
+40 32.5 35     810.03739
+41 37.5 35    1106.24151
+42 42.5 35    1452.87865
+43 12.5 40     108.51002
+44 17.5 40     225.79043
+45 22.5 40     390.30031
+46 27.5 40     604.21763
+47 32.5 40     869.34721
+48 37.5 40    1187.23898
+49 42.5 40    1559.25642</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="case-study-2-fruit-trees" class="level1" style="text-decoration-line: underline;" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Case Study 2: Fruit Trees</h1>
+</section>
+<section id="data-and-ideas-for-this-case-study-come-from-militino-et-al.-2006." class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="data-and-ideas-for-this-case-study-come-from-militino-et-al.-2006."><span class="header-section-number">2.1</span> Data and ideas for this case study come from Militino et al.&nbsp;(2006).</h2>
+</section>
+<p>To estimate the total surface occupied by fruit trees in three small areas (R63, R67, and R68) of Navarra in 2001, a sample of 47 square segments has been taken. The experimental units are square segments or quadrats of 4 hectares, obtained by random sampling after overlaying a square grid on the study domain. The focus of this case study is illustrating two different techniques used to obtain estimates: direct estimation and small area estimation. The direct technique estimates the total surface area by multiplying the mean of the observed surface area in the sampled segments by the total number of segments in every small area. The small area technique consists of creating a regression model where the dependent variable is the observed surface area occupied by fruit trees in every segment and the explanatory variables are the classified cultivars by satellite in the same segment and the small areas to which they belong. The final surface area totals are obtained by multiplying the total classified surface area of every small area by the β’s parameter estimates obtained from the regression model (<span class="math inline">\(\text{observed surface area} \sim \text{classified surface area} + \text{small areas}\)</span>). The surface variables in the data frame <span style="background-color: red;">SATFRUIT</span> are given in <span class="math inline">\(m^2\)</span>:</p>
+<ul>
+<li><p><strong>quadrat</strong> is the number of the sampled segment or quadrat</p></li>
+<li><p><strong>smallarea</strong> are the small areas’ labels</p></li>
+<li><p><strong>wheat</strong> is the classified surface of wheat in the sampled segment</p></li>
+<li><p><strong>barley</strong> is the classified surface of barley in the sampled segment</p></li>
+<li><p><strong>nonarable</strong> is the classified surface of fallow or non-arable land in the sampled segment</p></li>
+<li><p><strong>corn</strong> is the classified surface of corn in the sampled segment</p></li>
+<li><p><strong>sunflower</strong> is the classified surface of sunflowers in the sampled segment</p></li>
+<li><p><strong>vineyard</strong> is the classified surface of vineyards in the sampled segment</p></li>
+<li><p><strong>grass</strong> is the classified surface of grass in the sampled segment</p></li>
+<li><p><strong>asparagus</strong> is the classified surface of asparagus in the sampled segment</p></li>
+<li><p><strong>alfalfa</strong> is the classified surface of lucerne (type of alfalfa) in the sampled segment</p></li>
+<li><p><strong>rape</strong> is the classified surface of rape Brassica napus in the sampled segment</p></li>
+<li><p><strong>rice</strong> is the classified surface of rice in the sampled segment</p></li>
+<li><p><strong>almonds</strong> is the classified surface of almonds in the sampled segment</p></li>
+<li><p><strong>olives</strong> is the classified surface of olives in the sampled segment</p></li>
+<li><p><strong>fruit</strong> is the classified surface of fruit trees in the sampled segment</p></li>
+<li><p><strong>observed</strong> is the observed surface of fruit trees in the sampled segment</p></li>
+</ul>
+<hr>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"satfruit"</span>)</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(satfruit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   47 obs. of  17 variables:
+ $ QUADRAT: int  59106566 59086560 59406568 59406562 59486566 59446566 60006620 59886642 59846648 61286548 ...
+ $ SArea  : Factor w/ 3 levels "R63","R67","R68": 3 3 3 3 3 3 3 3 3 1 ...
+ $ WH     : num  0 0 0 0 0 ...
+ $ BA     : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ NAR    : num  1934 1392 2026 1311 1684 ...
+ $ COR    : num  0 691 0 0 204 ...
+ $ SF     : num  0 0 0 0 0 ...
+ $ VI     : num  0 399.1 54.2 0 0 ...
+ $ PS     : num  667 0 0 0 0 ...
+ $ ES     : num  0 382.97 7.56 452.08 1020.62 ...
+ $ AF     : num  0 105 0 0 0 ...
+ $ CO     : num  0 0 0 0 0 ...
+ $ AR     : num  0 0 0 0 0 0 0 0 0 0 ...
+ $ AL     : num  690 0 0 0 0 ...
+ $ OL     : num  6923 2548 1925 1333 690 ...
+ $ FR     : num  4285 8450 10486 11404 10900 ...
+ $ OBS    : num  4627 7173 3305 6458 6926 ...</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(satfruit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    QUADRAT         SArea          WH                BA         
+ Min.   :59086560   R63: 3   Min.   :   0.00   Min.   :   0.00  
+ 1st Qu.:60676695   R67:32   1st Qu.:   0.00   1st Qu.:   0.00  
+ Median :61406658   R68:12   Median :   0.00   Median :   0.00  
+ Mean   :61087866            Mean   :  78.36   Mean   :  92.28  
+ 3rd Qu.:61656512            3rd Qu.:   0.00   3rd Qu.:   0.00  
+ Max.   :63006502            Max.   :2377.70   Max.   :3964.03  
+      NAR               COR               SF               VI         
+ Min.   :   0.00   Min.   :   0.0   Min.   :   0.0   Min.   :   0.00  
+ 1st Qu.:  77.18   1st Qu.:   0.0   1st Qu.:   0.0   1st Qu.:   0.00  
+ Median : 508.41   Median :   0.0   Median :   0.0   Median :   0.00  
+ Mean   :1309.05   Mean   : 761.1   Mean   : 149.3   Mean   :  36.18  
+ 3rd Qu.:1896.00   3rd Qu.: 292.3   3rd Qu.:   0.0   3rd Qu.:   0.00  
+ Max.   :5206.75   Max.   :7123.1   Max.   :5459.4   Max.   :1128.25  
+       PS                ES                AF                 CO         
+ Min.   :   0.00   Min.   :   0.00   Min.   :   0.000   Min.   :   0.00  
+ 1st Qu.:   0.00   1st Qu.:   0.00   1st Qu.:   0.000   1st Qu.:   0.00  
+ Median :   0.00   Median :   0.00   Median :   1.827   Median :   0.00  
+ Mean   :  58.43   Mean   :  64.76   Mean   : 731.052   Mean   :  99.99  
+ 3rd Qu.:   0.00   3rd Qu.:   0.00   3rd Qu.: 319.637   3rd Qu.:   0.00  
+ Max.   :1699.69   Max.   :1020.62   Max.   :9759.353   Max.   :2362.25  
+       AR               AL               OL               FR       
+ Min.   :  0.00   Min.   :   0.0   Min.   :   0.0   Min.   :    0  
+ 1st Qu.:  0.00   1st Qu.:   0.0   1st Qu.:   0.0   1st Qu.: 4241  
+ Median :  0.00   Median :   0.0   Median :   0.0   Median : 8536  
+ Mean   : 20.72   Mean   : 489.9   Mean   : 601.8   Mean   : 7827  
+ 3rd Qu.:  0.00   3rd Qu.: 355.2   3rd Qu.: 569.3   3rd Qu.:11356  
+ Max.   :973.97   Max.   :6745.3   Max.   :6922.6   Max.   :13969  
+      OBS       
+ Min.   :    0  
+ 1st Qu.: 3382  
+ Median : 7173  
+ Mean   : 7414  
+ 3rd Qu.:11563  
+ Max.   :13548  </code></pre>
+</div>
+</div>
+<section id="characterize-the-shape-center-and-spread-for-the-variable-fruit." class="level3" data-number="2.1.1">
+<h3 data-number="2.1.1" class="anchored" data-anchor-id="characterize-the-shape-center-and-spread-for-the-variable-fruit."><span class="header-section-number">2.1.1</span> Characterize the shape, center, and spread for the variable <strong>fruit</strong>.</h3>
+<p>Describe:</p>
+<ul>
+<li><p>Shape → skewed or symmetric?</p></li>
+<li><p>Center → mean / median</p></li>
+<li><p>Spread → variability</p></li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(satfruit<span class="sc">$</span>FR)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      0    4241    8536    7827   11356   13969 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(satfruit<span class="sc">$</span>FR,</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"Histogram of Classified Fruit Area (FR)"</span>,</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"Classified fruit area (m²)"</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>     )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The distribution of the classified fruit area (FR) is <strong>right-skewed</strong>, with a larger concentration of quadrats having medium to high fruit areas and fewer quadrats with very small values. The center of the distribution can be described by the <strong>median</strong>, while the spread is relatively large, indicating substantial variability in classified fruit area among the sampled quadrats.</p>
+</section>
+<section id="the-maximum-number-of-m2-of-classified-fruits-by-segment" class="level3" data-number="2.1.2">
+<h3 data-number="2.1.2" class="anchored" data-anchor-id="the-maximum-number-of-m2-of-classified-fruits-by-segment"><span class="header-section-number">2.1.2</span> The maximum number of <span class="math inline">\(m^2\)</span> of classified fruits by segment</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>max_num <span class="ot">&lt;-</span> <span class="fu">max</span>(satfruit<span class="sc">$</span>FR)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"The maximum number of m^2 of classified fruits by segment is"</span>, max_num, <span class="st">"m^2"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The maximum number of m^2 of classified fruits by segment is 13968.61 m^2</code></pre>
+</div>
+</div>
+</section>
+<section id="how-many-observations-are-there-by-small-area" class="level3" data-number="2.1.3">
+<h3 data-number="2.1.3" class="anchored" data-anchor-id="how-many-observations-are-there-by-small-area"><span class="header-section-number">2.1.3</span> How many observations are there by small area?</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>obs <span class="ot">&lt;-</span> <span class="fu">table</span>(satfruit<span class="sc">$</span>SArea)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"There are"</span>, obs, <span class="st">"observations by small area."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>There are 3 32 12 observations by small area.</code></pre>
+</div>
+</div>
+</section>
+<section id="use-scatterplotmatrix-from-car-or-pairs-to-explore-the-linear-relationships-between-observed-and-the-remainder-of-the-numerical-variables.-comment-on-the-results." class="level3" data-number="2.1.4">
+<h3 data-number="2.1.4" class="anchored" data-anchor-id="use-scatterplotmatrix-from-car-or-pairs-to-explore-the-linear-relationships-between-observed-and-the-remainder-of-the-numerical-variables.-comment-on-the-results."><span class="header-section-number">2.1.4</span> Use <strong>scatterplotMatrix()</strong> from car or <strong>pairs()</strong> to explore the linear relationships between observed and the remainder of the numerical variables. Comment on the results.</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pairs</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  satfruit[, <span class="fu">c</span>(<span class="st">"OBS"</span>, <span class="st">"FR"</span>, <span class="st">"WH"</span>, <span class="st">"BA"</span>, <span class="st">"VI"</span>, <span class="st">"PS"</span>)],</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">main =</span> <span class="st">"Scatterplot Matrix of Selected Variables"</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The scatterplot matrix shows a <strong>strong positive linear relationship</strong> between the observed fruit area (OBS) and the classified fruit area (FR). This indicates that satellite-classified fruit area is a good predictor of the observed fruit area. In contrast, the relationships between OBS and the other land-use variables (such as WH, BA, VI, and PS) are weak or show no clear linear pattern.</p>
+</section>
+<section id="create-density-plots-of-the-observed-fruits-surface-area-observed-by-small-areas-smallarea." class="level3" data-number="2.1.5">
+<h3 data-number="2.1.5" class="anchored" data-anchor-id="create-density-plots-of-the-observed-fruits-surface-area-observed-by-small-areas-smallarea."><span class="header-section-number">2.1.5</span> Create density plots of the observed fruits’ surface area (Observed) by small areas (smallarea).</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  satfruit, <span class="fu">aes</span>(<span class="at">x=</span>OBS, <span class="at">fill=</span>SArea))<span class="sc">+</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha=</span><span class="fl">0.4</span>)<span class="sc">+</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Density of Observed Fruit Area by Small Area"</span>,</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Observed fruit area (m²)"</span>,</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Density"</span></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The density plots show clear differences in the distribution of observed fruit area (OBS) across the three small areas. Area R63 is concentrated at lower observed fruit values, R68 shows intermediate values, while R67 tends to have higher observed fruit areas. This indicates spatial variability in fruit tree coverage among the small areas.</p>
+</section>
+<section id="use-boxplots-and-barplots-with-standard-errors-to-compare-the-observed-surface-area-observed-and-the-classified-surface-area-fruit-by-small-areas-smallarea" class="level3" data-number="2.1.6">
+<h3 data-number="2.1.6" class="anchored" data-anchor-id="use-boxplots-and-barplots-with-standard-errors-to-compare-the-observed-surface-area-observed-and-the-classified-surface-area-fruit-by-small-areas-smallarea"><span class="header-section-number">2.1.6</span> Use boxplots and barplots with standard errors to compare the observed surface area (observed) and the classified surface area (fruit) by small areas (smallarea)</h3>
+<p><u><strong>Boxplot</strong></u></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">boxplot</span>(OBS <span class="sc">~</span>SArea, <span class="at">data =</span> satfruit,</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>        <span class="at">main =</span> <span class="st">"Observed Fruit Area by Small Area"</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">ylab =</span> <span class="st">"Observed area (m²)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The boxplots show clear differences in the distribution of observed fruit area (OBS) among the three small areas. Area R63 has the lowest observed fruit areas, while R67 shows the highest median values and the largest spread. Area R68 has intermediate values between R63 and R67.</p>
+<p><u><strong>Barplot with standard errors</strong></u></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>summary_df <span class="ot">&lt;-</span> satfruit <span class="sc">%&gt;%</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(SArea) <span class="sc">%&gt;%</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_obs =</span> <span class="fu">mean</span>(OBS),</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">se_obs =</span> <span class="fu">sd</span>(OBS) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>())</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot</span>(summary_df<span class="sc">$</span>mean_obs,</span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">names.arg =</span> summary_df<span class="sc">$</span>SArea,</span>
+<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">ylab =</span> <span class="st">"Mean observed fruit area (m²)"</span>,</span>
+<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">main =</span> <span class="st">"Mean Observed Fruit Area by Small Area"</span>)</span>
+<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a><span class="fu">arrows</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,</span>
+<span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a>       summary_df<span class="sc">$</span>mean_obs <span class="sc">-</span> summary_df<span class="sc">$</span>se_obs,</span>
+<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a>       <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>,</span>
+<span id="cb50-18"><a href="#cb50-18" aria-hidden="true" tabindex="-1"></a>       summary_df<span class="sc">$</span>mean_obs <span class="sc">+</span> summary_df<span class="sc">$</span>se_obs,</span>
+<span id="cb50-19"><a href="#cb50-19" aria-hidden="true" tabindex="-1"></a>       <span class="at">angle =</span> <span class="dv">90</span>, <span class="at">code =</span> <span class="dv">3</span>, <span class="at">length =</span> <span class="fl">0.1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Linear-Regression-Case-Studies_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The barplot of mean observed fruit area, together with standard error bars, confirms these differences. R67 has the highest mean observed fruit area, followed by R68, while R63 has the lowest mean. The standard errors indicate variability within each small area.</p>
+</section>
+<section id="compute-the-correlation-between-observed-and-all-other-numerical-variables.-list-the-three-variables-in-order-along-with-their-correlation-coefficient-that-have-the-highest-correlation-with-observed." class="level3" data-number="2.1.7">
+<h3 data-number="2.1.7" class="anchored" data-anchor-id="compute-the-correlation-between-observed-and-all-other-numerical-variables.-list-the-three-variables-in-order-along-with-their-correlation-coefficient-that-have-the-highest-correlation-with-observed."><span class="header-section-number">2.1.7</span> Compute the correlation between observed and all other numerical variables. List the three variables in order along with their correlation coefficient that have the highest correlation with observed.</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>cor_mat <span class="ot">&lt;-</span> <span class="fu">cor</span>(satfruit[, <span class="fu">sapply</span>(satfruit, is.numeric)])</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span>(cor_mat[<span class="st">"OBS"</span>, ], <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        OBS          FR     QUADRAT          WH          ES          VI 
+ 1.00000000  0.81869044  0.20123199  0.05068929 -0.01936316 -0.10127910 
+         PS          CO          AF          BA         NAR          AR 
+-0.11229475 -0.14676802 -0.17134119 -0.17813162 -0.24025256 -0.25533558 
+         OL          SF          AL         COR 
+-0.28925097 -0.29737491 -0.39884648 -0.40221646 </code></pre>
+</div>
+</div>
+</section>
+<section id="model-a" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="model-a"><span class="header-section-number">2.2</span> Model (A)</h2>
+<p>Use backward elimination to develop a model that predicts observed using the data frame SATFRUIT without considering smallarea. Start the backward elimination process by considering all of the numerical variables in SATFRUIT as potential predictors. Use a p-value-to-remove of 10%. Store the final model in the object modelA.</p>
+<ul>
+<li>Build the full model</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>full_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  OBS <span class="sc">~</span> FR <span class="sc">+</span> WH <span class="sc">+</span> BA <span class="sc">+</span> NAR <span class="sc">+</span> COR <span class="sc">+</span> SF <span class="sc">+</span> VI <span class="sc">+</span> PS <span class="sc">+</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>        ES <span class="sc">+</span> AF <span class="sc">+</span> CO <span class="sc">+</span> AR <span class="sc">+</span> AL <span class="sc">+</span> OL,</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> satfruit</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(full_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = OBS ~ FR + WH + BA + NAR + COR + SF + VI + PS + 
+    ES + AF + CO + AR + AL + OL, data = satfruit)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-5740.5 -1051.0   132.5  1121.2  3766.9 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)   
+(Intercept) 3807.91636 2771.02629   1.374  0.17893   
+FR             0.64502    0.22360   2.885  0.00696 **
+WH            -0.37260    1.04276  -0.357  0.72320   
+BA             0.37934    0.82487   0.460  0.64871   
+NAR            0.10368    0.37452   0.277  0.78369   
+COR           -0.07334    0.37881  -0.194  0.84771   
+SF            -0.73574    0.57966  -1.269  0.21350   
+VI             0.24720    2.15693   0.115  0.90947   
+PS             4.07116    2.25415   1.806  0.08032 . 
+ES            -2.37733    1.96616  -1.209  0.23547   
+AF            -0.34820    0.27832  -1.251  0.21997   
+CO            -1.72436    1.49772  -1.151  0.25813   
+AR            -3.58748    3.08408  -1.163  0.25334   
+AL            -0.95704    0.43558  -2.197  0.03537 * 
+OL            -0.89961    0.30497  -2.950  0.00590 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2423 on 32 degrees of freedom
+Multiple R-squared:  0.7819,    Adjusted R-squared:  0.6865 
+F-statistic: 8.195 on 14 and 32 DF,  p-value: 4.939e-07</code></pre>
+</div>
+</div>
+<ul>
+<li>Backward elimination (<span class="math inline">\(\alpha =0.10\)</span>)</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>modelA <span class="ot">&lt;-</span> <span class="fu">step</span>(</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>  full_model,</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">direction =</span> <span class="st">"backward"</span>,</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="fu">qchisq</span>(<span class="fl">0.90</span>, <span class="dv">1</span>),</span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">trace =</span> <span class="cn">FALSE</span></span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(modelA)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = OBS ~ FR + PS + OL, data = satfruit)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-5333.4 -1079.3   150.9   933.8  4210.8 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 807.6049   797.4016   1.013  0.31682    
+FR            0.8805     0.0862  10.214 4.52e-13 ***
+PS            2.6178     1.3456   1.946  0.05827 .  
+OL           -0.7282     0.2580  -2.823  0.00719 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2310 on 43 degrees of freedom
+Multiple R-squared:  0.7336,    Adjusted R-squared:  0.715 
+F-statistic: 39.47 on 3 and 43 DF,  p-value: 2.051e-12</code></pre>
+</div>
+</div>
+<p>Model (A), obtained through backward elimination, results in a parsimonious regression model that retains only the most relevant predictors. The classified fruit area (FR) is the dominant explanatory variable, while grass (PS) and olive (OL) areas provide additional explanatory power. The model explains a substantial proportion of the variability in observed fruit area.</p>
+<section id="compute-textcv_n-the-leave-one-out-cross-validation-error-for-modela.-set-the-seed-to-5-and-compute-textcv_5-the-five-fold-cross-validation-error-for-modela.-the-cross-validation-error-for-a-generalized-linear-model-can-be-computed-using-the-cv.glm-function-from-the-boot-package.-using-the-function-glm-without-passing-a-family-argument-is-equivalent-to-using-the-function-lm.-r-code-1-provides-a-template-for-how-to-use-the-cv.glm-function.-note-that-textcv_n-is-returned-with-cv.errordelta1.-to-compute-textcv_5-pass-the-value-5-to-the-argument-k-inside-the-cv.glm-function." class="level3" data-number="2.2.1">
+<h3 data-number="2.2.1" class="anchored" data-anchor-id="compute-textcv_n-the-leave-one-out-cross-validation-error-for-modela.-set-the-seed-to-5-and-compute-textcv_5-the-five-fold-cross-validation-error-for-modela.-the-cross-validation-error-for-a-generalized-linear-model-can-be-computed-using-the-cv.glm-function-from-the-boot-package.-using-the-function-glm-without-passing-a-family-argument-is-equivalent-to-using-the-function-lm.-r-code-1-provides-a-template-for-how-to-use-the-cv.glm-function.-note-that-textcv_n-is-returned-with-cv.errordelta1.-to-compute-textcv_5-pass-the-value-5-to-the-argument-k-inside-the-cv.glm-function."><span class="header-section-number">2.2.1</span> Compute <span class="math inline">\(\text{CV}_n\)</span>, the leave-one-out cross-validation error, for modelA. Set the seed to 5 and compute <span class="math inline">\(\text{CV}_5\)</span>, the five-fold cross-validation error, for modelA. The cross-validation error for a generalized linear model can be computed using the cv.glm() function from the boot package. Using the function glm() without passing a family argument is equivalent to using the function lm(). R Code 1 provides a template for how to use the cv.glm() function. Note that <span class="math inline">\(\text{CV}_n\)</span> is returned with cv.error$delta[1]. To compute <span class="math inline">\(\text{CV}_5\)</span>, pass the value 5 to the argument <span class="math inline">\(K\)</span> inside the cv.glm() function.</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>satfruit_clean <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(satfruit)</span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>modelA_glm <span class="ot">&lt;-</span> <span class="fu">glm</span>(OBS <span class="sc">~</span> FR <span class="sc">+</span> PS <span class="sc">+</span> OL, <span class="at">data =</span> satfruit_clean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(boot)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>cv_error_n <span class="ot">&lt;-</span> <span class="fu">cv.glm</span>(</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> satfruit_clean,</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">glmfit =</span> modelA_glm</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>CVn_A <span class="ot">&lt;-</span> cv_error_n<span class="sc">$</span>delta[<span class="dv">1</span>]</span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"CV_n (model A):"</span>,CVn_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>CV_n (model A): 9131968</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>cv_error_5 <span class="ot">&lt;-</span> <span class="fu">cv.glm</span>(</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> satfruit_clean,</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">glmfit =</span> modelA_glm,</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">K =</span> <span class="dv">5</span></span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>CV5_A <span class="ot">&lt;-</span> cv_error_5<span class="sc">$</span>delta[<span class="dv">1</span>]</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"CV_5 (model A):"</span>,CV5_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>CV_5 (model A): 10248950</code></pre>
+</div>
+</div>
+</section>
+<section id="compute-r2-r2-_a-and-aic-and-the-bic-for-model-a.-what-is-the-proportion-of-total-variability-explained-by-model-a" class="level3" data-number="2.2.2">
+<h3 data-number="2.2.2" class="anchored" data-anchor-id="compute-r2-r2-_a-and-aic-and-the-bic-for-model-a.-what-is-the-proportion-of-total-variability-explained-by-model-a"><span class="header-section-number">2.2.2</span> Compute <span class="math inline">\(R^2\)</span>, <span class="math inline">\(R^2 _a\)</span>, and AIC, and the BIC for Model (A). What is the proportion of total variability explained by Model (A)</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>r2_A <span class="ot">&lt;-</span> <span class="fu">summary</span>(modelA)<span class="sc">$</span>r.squared</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"R2 (model A):"</span>, r2_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>R2 (model A): 0.733581</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>r2_adj_A <span class="ot">&lt;-</span> <span class="fu">summary</span>(modelA)<span class="sc">$</span>adj.r.squared</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Adjusted R2 (model A):"</span>, r2_adj_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Adjusted R2 (model A): 0.7149936</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a>aic_A <span class="ot">&lt;-</span> <span class="fu">AIC</span>(modelA)</span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"AIC (model A):"</span>, aic_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>AIC (model A): 867.2384</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>bic_A <span class="ot">&lt;-</span> <span class="fu">BIC</span>(modelA)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"BIC (model A):"</span>, bic_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>BIC (model A): 876.4891</code></pre>
+</div>
+</div>
+<p><u>Conclusion</u>: Model (A) explains approximately <strong>73.36% of the total variability</strong> in the observed fruit area.</p>
+</section>
+</section>
+<section id="model-b" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="model-b"><span class="header-section-number">2.3</span> Model (B)</h2>
+<p>Use the criterion-based procedure AIC, which for linear regression is equivalent to Mallow’s <span class="math inline">\(\text{C}_p\)</span>, to develop a model that predicts observed using all of the numerical variables in SATFRUIT. Store the model in the object modelB. Verify that the model suggested using BIC is the same model as the one suggested by AIC or Mallow’s <span class="math inline">\(\text{C}_p\)</span>, which are all the same as Model (A).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>modelB <span class="ot">&lt;-</span> <span class="fu">step</span>(</span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>  full_model,</span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">direction =</span> <span class="st">"both"</span>,</span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">trace =</span> <span class="cn">FALSE</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(modelB)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = OBS ~ FR + PS + AL + OL, data = satfruit)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-5448.3 -1318.2   319.4   909.6  4002.8 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 1318.17341  869.22493   1.516  0.13689    
+FR             0.83850    0.09039   9.277 1.01e-11 ***
+PS             2.57887    1.33118   1.937  0.05946 .  
+AL            -0.39549    0.28301  -1.397  0.16962    
+OL            -0.70526    0.25571  -2.758  0.00857 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2285 on 42 degrees of freedom
+Multiple R-squared:  0.7454,    Adjusted R-squared:  0.7212 
+F-statistic: 30.74 on 4 and 42 DF,  p-value: 5.545e-12</code></pre>
+</div>
+</div>
+<p>Model (B) provides a slightly improved fit compared to Model (A), as indicated by a higher <span class="math inline">\(R^2\)</span>, while retaining a simple and interpretable structure. The classified fruit area remains the dominant predictor of observed fruit area.</p>
+</section>
+<section id="model-c" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="model-c"><span class="header-section-number">2.4</span> Model (C)</h2>
+<p>Use mean squared prediction error (MSPE) to select a model using all of the numerical variables in SATFRUIT as potential predictors for predicting observed. Store the model in the object modelC. Specifically, select a model using both leave-one-out cross validation (LOOCV) and five-fold cross validation.</p>
+<ol type="1">
+<li>Compute <span class="math inline">\(\text{CV}_n\)</span> for modelC. Set the seed to 5 and compute <span class="math inline">\(\text{CV}_5\)</span> for modelC.</li>
+</ol>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>satfruit_clean <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(satfruit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>full_glm <span class="ot">&lt;-</span> <span class="fu">glm</span>(</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>  OBS <span class="sc">~</span> FR <span class="sc">+</span> WH <span class="sc">+</span> BA <span class="sc">+</span> NAR <span class="sc">+</span> COR <span class="sc">+</span> SF <span class="sc">+</span> VI <span class="sc">+</span> PS <span class="sc">+</span></span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>        ES <span class="sc">+</span> AF <span class="sc">+</span> CO <span class="sc">+</span> AR <span class="sc">+</span> AL <span class="sc">+</span> OL,</span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> satfruit_clean</span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Compute MSPE (<span class="math inline">\(\text{CV}_n \text{ and} \text{CV}_5\)</span>)</p>
+<ul>
+<li>Model A</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>modelA_glm <span class="ot">&lt;-</span> <span class="fu">glm</span>(OBS <span class="sc">~</span> FR <span class="sc">+</span> PS <span class="sc">+</span> OL, <span class="at">data =</span> satfruit_clean)</span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(boot)</span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>CVn_A <span class="ot">&lt;-</span> <span class="fu">cv.glm</span>(satfruit_clean, modelA_glm)<span class="sc">$</span>delta[<span class="dv">1</span>]</span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>CV5_A <span class="ot">&lt;-</span> <span class="fu">cv.glm</span>(satfruit_clean, modelA_glm, <span class="at">K =</span> <span class="dv">5</span>)<span class="sc">$</span>delta[<span class="dv">1</span>]</span>
+<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Model A:"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Model A:</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">CV_n="</span>,CVn_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+CV_n= 9131968</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">CV_5="</span>,CV5_A)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+CV_5= 10248950</code></pre>
+</div>
+</div>
+<ul>
+<li>Model B</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a>modelB_glm <span class="ot">&lt;-</span> <span class="fu">glm</span>(OBS <span class="sc">~</span> FR <span class="sc">+</span> PS <span class="sc">+</span> AL <span class="sc">+</span> OL, <span class="at">data =</span> satfruit_clean)</span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a>CVn_B <span class="ot">&lt;-</span> <span class="fu">cv.glm</span>(satfruit_clean, modelB_glm)<span class="sc">$</span>delta[<span class="dv">1</span>]</span>
+<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb80-7"><a href="#cb80-7" aria-hidden="true" tabindex="-1"></a>CV5_B <span class="ot">&lt;-</span> <span class="fu">cv.glm</span>(satfruit_clean, modelB_glm, <span class="at">K =</span> <span class="dv">5</span>)<span class="sc">$</span>delta[<span class="dv">1</span>]</span>
+<span id="cb80-8"><a href="#cb80-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-9"><a href="#cb80-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Model B:"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Model B:</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">CV_n="</span>,CVn_B)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+CV_n= 12248786</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">CV_5="</span>,CV5_B)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+CV_5= 16244131</code></pre>
+</div>
+</div>
+<p><u><strong>Comparison:</strong></u></p>
+<ul>
+<li><p>For <strong>LOOCV</strong> (<span class="math inline">\(\text{CV}_n\)</span>):</p>
+<p>Model (A) &lt; Model (B)</p></li>
+<li><p>For <strong>5-fold CV</strong> (<span class="math inline">\(\text{CV}_5\)</span>):</p>
+<p>Model (A) &lt; Model (B)</p></li>
+</ul>
+<p><strong>Model (A) has smaller prediction error in both cases.</strong></p>
+<p><u><strong>Final selection:</strong></u> Model (C) = Model (A)</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb86"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb86-1"><a href="#cb86-1" aria-hidden="true" tabindex="-1"></a>modelC <span class="ot">&lt;-</span> modelA_glm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

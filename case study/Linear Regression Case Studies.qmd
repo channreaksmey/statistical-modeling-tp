@@ -1,0 +1,544 @@
+---
+title: "Linear Regression Case Studies"
+author: "Ny Chantharith"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    css: style.css
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+::: {style="text-decoration-line: underline;"}
+# Case Study 1: Biomass
+:::
+
+<div>
+
+## Data and ideas for this case study come from (Goicoa et al., 2011).
+
+</div>
+
+To estimate the amount of carbon dioxide retained in a tree, its biomass needs to be known and multiplied by an expansion factor (there are several alternatives in the literature). To calculate the biomass, specific regression equations by species are frequently used. These regression equations, called allometric equations, estimate the biomass of the tree by means of some known characteristics, typically diameter and/or height of the stem and branches. The BIOMASS file contains data of 42 beeches (Fagus Sylvatica) from a forest of Navarra (Spain) in 2006, where
+
+-   **diameter**: diameter of the stem in centimeters
+
+-   **height**: height of the tree in meters
+
+-   **stemweight**: weight of the stem in kilograms
+
+-   **aboveweight**: aboveground weight in kilograms
+
+------------------------------------------------------------------------
+
+### Create a scatterplot of above weight versus diameter. Is the relationship linear? Superimpose a regression line over the plot just created.
+
+```{r}
+library(PASWR)
+data(biomass)
+str(biomass)
+head(biomass)
+summary(biomass)
+```
+
+```{r}
+plot(biomass$Dn, biomass$PSA,
+     xlab = "Diameter (cm)",
+     ylab = "Aboveground Biomass (kg)",
+     main = "Aboveground Biomass vs Diameter")
+
+abline(lm(PSA ~ Dn, data = biomass),
+       col = "red", lwd = 2)
+```
+
+After applying a logarithmic transformation to both variables, the relationship becomes approximately **linear**, indicating that an allometric (power-law) model is appropriate.
+
+### Create a scatterplot of log(aboveweight) versus log(diameter). Is the relationship linear? Superimpose a regression line over the plot just created.
+
+```{r}
+plot(log(biomass$Dn), log(biomass$PSA),
+     xlab = "log(Diameter",
+     ylab = "log(Aboveground Biomass",
+     main = "Log-Log Relationship")
+
+abline(lm(log(PSA) ~ log(Dn), data = biomass),
+       col = "red", lwd = 2)
+```
+
+The log–log transformation linearizes the relationship between diameter and aboveground biomass. The strong linear trend and small dispersion around the fitted line suggest that a log-linear regression model is appropriate.
+
+### Fit the regression model, and compute $R^2$, $R^2_a$ , and the variance of the residuals.
+
+$$
+\log(\text{aboveweight})=\beta_0+\beta_1\log(\text{diameter})
+$$
+
+```{r}
+model1 <- lm(log(PSA) ~ log(Dn), data = biomass)
+summary(model1)
+```
+
+```{r}
+R2 <- summary(model1)$r.squared
+R2_adj <- summary(model1)$adj.r.squared
+sigma2 <- summary(model1)$sigma^2
+```
+
+```{r}
+cat("R squared:", R2, "\n")
+cat("Adjusted R squared:", R2_adj, "\n")
+cat("Variance:", sigma2, "\n")
+```
+
+### Introduce $\log(\text{height})$ as an explanatory variable and fit the model. What is the effect of introducing $\log(\text{height})$ in the model?
+
+$$
+\log(\text{aboveweight})=\beta_0+\beta_1\log(\text{diameter})+\beta_2\log(\text{height})
+$$
+
+```{r}
+model2 <- lm(log(PSA) ~ log(Dn) + log(H), data = biomass)
+summary(model2)
+```
+
+Including log(height) significantly improves the model by reducing residual variability and increasing explanatory power. While diameter remains the dominant predictor of aboveground biomass, height provides additional information that enhances model accuracy.
+
+### Complete the Analysis questions for the model in (1.1.4).
+
+::: {style="text-decoration-line: underline; text-align:center;"}
+**Analysis questions:**
+:::
+
+#### Estimate the model’s parameters and their standard errors. Provide an interpretation for the model’s parameters.
+
+```{r}
+summary(model2)
+```
+
+-   **Diameter effect (**$\beta_1$​) The coefficient of log(diameter) is positive and highly statistically significant ($\text{p-value} < 2 × 10^{-16}$). This indicates that, holding height constant, a **1% increase in tree diameter is associated with an average increase of approximately 2.18% in aboveground biomass**.
+
+-   **Height effect (**$\beta_2$)\
+    The coefficient of log(height) is also positive and statistically significant ($\text{p-value} < 4.71 × 10^{-5}$).\
+    This implies that, holding diameter constant, a **1% increase in tree height leads to an average increase of about 0.53% in aboveground biomass**.
+
+-   **Intercept (**$\beta_0$)\
+    The intercept represents the expected value of log(PSA) when both diameter and height equal one. Although it has no direct biological interpretation, it is necessary to correctly position the regression surface.
+
+#### Compute the variance-covariance matrix of the $\hat{\beta_s}$
+
+```{r}
+vcov(model2)
+```
+
+#### Provide 95% confidence intervals for $\beta_1$ and $\beta_2$.
+
+```{r}
+confint(model2, level = 0.95)
+```
+
+#### Compute the $R^2$, $R^2_a$ and the residual variance.
+
+```{r}
+R2_m2 <- summary(model2)$r.squared
+R2_adj_m2 <- summary(model2)$adj.r.squared
+sigma2_m2 <- summary(model2)$sigma^2
+```
+
+```{r}
+cat("R squared:", R2_m2, "\n")
+cat("Adjusted R squared:", R2_adj_m2, "\n")
+cat("Variance:", sigma2_m2, "\n")
+```
+
+#### Construct a graph with the default diagnostics plots of R.
+
+```{r}
+par(mfrow = c(2,2))
+plot(model2)
+```
+
+#### Can homogeneity of variance be assumed?
+
+Homogeneity of variance can be assumed. From the **Scale–Location plot**, the spread of the residuals is fairly constant across the fitted values, and no clear funnel-shaped pattern is observed. This indicates that the assumption of constant variance is reasonable.
+
+#### Do the residuals appear to follow a normal distribution?
+
+The residuals appear to follow a normal distribution. From the **Q–Q plot**, the residuals lie close to the reference straight line, with only small deviations at the tails. This suggests that the normality assumption is reasonably satisfied.
+
+#### Are there any outliers in the data?
+
+Most standardized residuals lie within the range $-2$ to $2$, and none are extremely large. This indicates that there are no severe outliers in the dataset.
+
+#### Are there any influential observations in the data?
+
+From the **Residuals vs Leverage plot**, all observations lie well below the Cook’s distance reference lines. This indicates that no single observation has a strong influence on the fitted model.
+
+### Prediction with Bias Correction
+
+Predictions are required for:
+
+-   $\text{diameter} = \text{seq}(12.5, 42.5, 5)$
+
+-   $\text{height} = \text{seq}(10, 40, 5)$
+
+```{r}
+newdata <- expand.grid(
+  Dn = seq(12.5, 42.5, 5),
+  H = seq(10, 40, 5)
+)
+
+pred_log <- predict(model2, newdata = newdata)
+
+sigma2 <- summary(model2)$sigma^2
+pred_corrected <- exp(pred_log + sigma2 / 2)
+
+results <- cbind(
+  newdata,
+  Predicted_PSA = pred_corrected
+)
+
+results
+```
+
+------------------------------------------------------------------------
+
+::: {style="text-decoration-line: underline;"}
+# Case Study 2: Fruit Trees
+:::
+
+<div>
+
+## Data and ideas for this case study come from Militino et al. (2006).
+
+</div>
+
+To estimate the total surface occupied by fruit trees in three small areas (R63, R67, and R68) of Navarra in 2001, a sample of 47 square segments has been taken. The experimental units are square segments or quadrats of 4 hectares, obtained by random sampling after overlaying a square grid on the study domain. The focus of this case study is illustrating two different techniques used to obtain estimates: direct estimation and small area estimation. The direct technique estimates the total surface area by multiplying the mean of the observed surface area in the sampled segments by the total number of segments in every small area. The small area technique consists of creating a regression model where the dependent variable is the observed surface area occupied by fruit trees in every segment and the explanatory variables are the classified cultivars by satellite in the same segment and the small areas to which they belong. The final surface area totals are obtained by multiplying the total classified surface area of every small area by the β’s parameter estimates obtained from the regression model ($\text{observed surface area} \sim \text{classified surface area} + \text{small areas}$). The surface variables in the data frame [SATFRUIT]{style="background-color: red;"} are given in $m^2$:
+
+-   **quadrat** is the number of the sampled segment or quadrat
+
+-   **smallarea** are the small areas’ labels
+
+-   **wheat** is the classified surface of wheat in the sampled segment
+
+-   **barley** is the classified surface of barley in the sampled segment
+
+-   **nonarable** is the classified surface of fallow or non-arable land in the sampled segment
+
+-   **corn** is the classified surface of corn in the sampled segment
+
+-   **sunflower** is the classified surface of sunflowers in the sampled segment
+
+-   **vineyard** is the classified surface of vineyards in the sampled segment
+
+-   **grass** is the classified surface of grass in the sampled segment
+
+-   **asparagus** is the classified surface of asparagus in the sampled segment
+
+-   **alfalfa** is the classified surface of lucerne (type of alfalfa) in the sampled segment
+
+-   **rape** is the classified surface of rape Brassica napus in the sampled segment
+
+-   **rice** is the classified surface of rice in the sampled segment
+
+-   **almonds** is the classified surface of almonds in the sampled segment
+
+-   **olives** is the classified surface of olives in the sampled segment
+
+-   **fruit** is the classified surface of fruit trees in the sampled segment
+
+-   **observed** is the observed surface of fruit trees in the sampled segment
+
+------------------------------------------------------------------------
+
+```{r}
+data("satfruit")
+str(satfruit)
+summary(satfruit)
+```
+
+### Characterize the shape, center, and spread for the variable **fruit**.
+
+Describe:
+
+-   Shape → skewed or symmetric?
+
+-   Center → mean / median
+
+-   Spread → variability
+
+```{r}
+summary(satfruit$FR)
+hist(satfruit$FR,
+     main = "Histogram of Classified Fruit Area (FR)",
+     xlab = "Classified fruit area (m²)"
+     )
+```
+
+The distribution of the classified fruit area (FR) is **right-skewed**, with a larger concentration of quadrats having medium to high fruit areas and fewer quadrats with very small values. The center of the distribution can be described by the **median**, while the spread is relatively large, indicating substantial variability in classified fruit area among the sampled quadrats.
+
+### The maximum number of $m^2$ of classified fruits by segment
+
+```{r}
+max_num <- max(satfruit$FR)
+cat("The maximum number of m^2 of classified fruits by segment is", max_num, "m^2")
+```
+
+### How many observations are there by small area?
+
+```{r}
+obs <- table(satfruit$SArea)
+cat("There are", obs, "observations by small area.")
+```
+
+### Use **scatterplotMatrix()** from car or **pairs()** to explore the linear relationships between observed and the remainder of the numerical variables. Comment on the results.
+
+```{r}
+pairs(
+  satfruit[, c("OBS", "FR", "WH", "BA", "VI", "PS")],
+  main = "Scatterplot Matrix of Selected Variables"
+)
+```
+
+The scatterplot matrix shows a **strong positive linear relationship** between the observed fruit area (OBS) and the classified fruit area (FR). This indicates that satellite-classified fruit area is a good predictor of the observed fruit area. In contrast, the relationships between OBS and the other land-use variables (such as WH, BA, VI, and PS) are weak or show no clear linear pattern.
+
+### Create density plots of the observed fruits' surface area (Observed) by small areas (smallarea).
+
+```{r}
+library(ggplot2)
+
+ggplot(
+  satfruit, aes(x=OBS, fill=SArea))+
+  geom_density(alpha=0.4)+
+  labs(
+    title = "Density of Observed Fruit Area by Small Area",
+    x = "Observed fruit area (m²)",
+    y = "Density"
+  )
+```
+
+The density plots show clear differences in the distribution of observed fruit area (OBS) across the three small areas. Area R63 is concentrated at lower observed fruit values, R68 shows intermediate values, while R67 tends to have higher observed fruit areas. This indicates spatial variability in fruit tree coverage among the small areas.
+
+### Use boxplots and barplots with standard errors to compare the observed surface area (observed) and the classified surface area (fruit) by small areas (smallarea)
+
+[**Boxplot**]{.underline}
+
+```{r}
+boxplot(OBS ~SArea, data = satfruit,
+        main = "Observed Fruit Area by Small Area",
+        ylab = "Observed area (m²)")
+```
+
+The boxplots show clear differences in the distribution of observed fruit area (OBS) among the three small areas. Area R63 has the lowest observed fruit areas, while R67 shows the highest median values and the largest spread. Area R68 has intermediate values between R63 and R67.
+
+[**Barplot with standard errors**]{.underline}
+
+```{r}
+library(dplyr)
+
+summary_df <- satfruit %>%
+  group_by(SArea) %>%
+  summarise(
+    mean_obs = mean(OBS),
+    se_obs = sd(OBS) / sqrt(n())
+  )
+
+barplot(summary_df$mean_obs,
+        names.arg = summary_df$SArea,
+        ylab = "Mean observed fruit area (m²)",
+        main = "Mean Observed Fruit Area by Small Area")
+
+arrows(1:3,
+       summary_df$mean_obs - summary_df$se_obs,
+       1:3,
+       summary_df$mean_obs + summary_df$se_obs,
+       angle = 90, code = 3, length = 0.1)
+```
+
+The barplot of mean observed fruit area, together with standard error bars, confirms these differences. R67 has the highest mean observed fruit area, followed by R68, while R63 has the lowest mean. The standard errors indicate variability within each small area.
+
+### Compute the correlation between observed and all other numerical variables. List the three variables in order along with their correlation coefficient that have the highest correlation with observed.
+
+```{r}
+cor_mat <- cor(satfruit[, sapply(satfruit, is.numeric)])
+sort(cor_mat["OBS", ], decreasing = TRUE)
+```
+
+## Model (A)
+
+Use backward elimination to develop a model that predicts observed using the data frame SATFRUIT without considering smallarea. Start the backward elimination process by considering all of the numerical variables in SATFRUIT as potential predictors. Use a p-value-to-remove of 10%. Store the final model in the object modelA.
+
+-   Build the full model
+
+```{r}
+full_model <- lm(
+  OBS ~ FR + WH + BA + NAR + COR + SF + VI + PS +
+        ES + AF + CO + AR + AL + OL,
+  data = satfruit
+)
+
+summary(full_model)
+```
+
+-   Backward elimination ($\alpha =0.10$)
+
+```{r}
+modelA <- step(
+  full_model,
+  direction = "backward",
+  k = qchisq(0.90, 1),
+  trace = FALSE
+)
+
+summary(modelA)
+```
+
+Model (A), obtained through backward elimination, results in a parsimonious regression model that retains only the most relevant predictors. The classified fruit area (FR) is the dominant explanatory variable, while grass (PS) and olive (OL) areas provide additional explanatory power. The model explains a substantial proportion of the variability in observed fruit area.
+
+### Compute $\text{CV}_n$, the leave-one-out cross-validation error, for modelA. Set the seed to 5 and compute $\text{CV}_5$, the five-fold cross-validation error, for modelA. The cross-validation error for a generalized linear model can be computed using the cv.glm() function from the boot package. Using the function glm() without passing a family argument is equivalent to using the function lm(). R Code 1 provides a template for how to use the cv.glm() function. Note that $\text{CV}_n$ is returned with cv.error\$delta\[1\]. To compute $\text{CV}_5$, pass the value 5 to the argument $K$ inside the cv.glm() function.
+
+```{r}
+satfruit_clean <- na.omit(satfruit)
+modelA_glm <- glm(OBS ~ FR + PS + OL, data = satfruit_clean)
+```
+
+```{r}
+library(boot)
+
+set.seed(5)
+cv_error_n <- cv.glm(
+  data = satfruit_clean,
+  glmfit = modelA_glm
+)
+
+CVn_A <- cv_error_n$delta[1]
+cat("CV_n (model A):",CVn_A)
+```
+
+```{r}
+set.seed(5)
+cv_error_5 <- cv.glm(
+  data = satfruit_clean,
+  glmfit = modelA_glm,
+  K = 5
+)
+
+CV5_A <- cv_error_5$delta[1]
+cat("CV_5 (model A):",CV5_A)
+```
+
+### Compute $R^2$, $R^2 _a$, and AIC, and the BIC for Model (A). What is the proportion of total variability explained by Model (A)
+
+```{r}
+r2_A <- summary(modelA)$r.squared
+cat("R2 (model A):", r2_A)
+```
+
+```{r}
+r2_adj_A <- summary(modelA)$adj.r.squared
+cat("Adjusted R2 (model A):", r2_adj_A)
+```
+
+```{r}
+aic_A <- AIC(modelA)
+cat("AIC (model A):", aic_A)
+```
+
+```{r}
+bic_A <- BIC(modelA)
+cat("BIC (model A):", bic_A)
+```
+
+[Conclusion]{.underline}: Model (A) explains approximately **73.36% of the total variability** in the observed fruit area.
+
+## Model (B)
+
+Use the criterion-based procedure AIC, which for linear regression is equivalent to Mallow’s $\text{C}_p$, to develop a model that predicts observed using all of the numerical variables in SATFRUIT. Store the model in the object modelB. Verify that the model suggested using BIC is the same model as the one suggested by AIC or Mallow’s $\text{C}_p$, which are all the same as Model (A).
+
+```{r}
+modelB <- step(
+  full_model,
+  direction = "both",
+  trace = FALSE
+)
+
+summary(modelB)
+```
+
+Model (B) provides a slightly improved fit compared to Model (A), as indicated by a higher $R^2$, while retaining a simple and interpretable structure. The classified fruit area remains the dominant predictor of observed fruit area.
+
+## Model (C)
+
+Use mean squared prediction error (MSPE) to select a model using all of the numerical variables in SATFRUIT as potential predictors for predicting observed. Store the model in the object modelC. Specifically, select a model using both leave-one-out cross validation (LOOCV) and five-fold cross validation.
+
+1.  Compute $\text{CV}_n$ for modelC. Set the seed to 5 and compute $\text{CV}_5$ for modelC.
+
+```{r}
+satfruit_clean <- na.omit(satfruit)
+```
+
+```{r}
+full_glm <- glm(
+  OBS ~ FR + WH + BA + NAR + COR + SF + VI + PS +
+        ES + AF + CO + AR + AL + OL,
+  data = satfruit_clean
+)
+```
+
+Compute MSPE ($\text{CV}_n \text{ and} \text{CV}_5$)
+
+-   Model A
+
+```{r}
+modelA_glm <- glm(OBS ~ FR + PS + OL, data = satfruit_clean)
+
+library(boot)
+
+set.seed(5)
+CVn_A <- cv.glm(satfruit_clean, modelA_glm)$delta[1]
+
+set.seed(5)
+CV5_A <- cv.glm(satfruit_clean, modelA_glm, K = 5)$delta[1]
+
+cat("Model A:")
+cat("\nCV_n=",CVn_A)
+cat("\nCV_5=",CV5_A)
+```
+
+-   Model B
+
+```{r}
+modelB_glm <- glm(OBS ~ FR + PS + AL + OL, data = satfruit_clean)
+
+set.seed(5)
+CVn_B <- cv.glm(satfruit_clean, modelB_glm)$delta[1]
+
+set.seed(5)
+CV5_B <- cv.glm(satfruit_clean, modelB_glm, K = 5)$delta[1]
+
+cat("Model B:")
+cat("\nCV_n=",CVn_B)
+cat("\nCV_5=",CV5_B)
+```
+
+[**Comparison:**]{.underline}
+
+-   For **LOOCV** ($\text{CV}_n$):
+
+    Model (A) \< Model (B)
+
+-   For **5-fold CV** ($\text{CV}_5$):
+
+    Model (A) \< Model (B)
+
+**Model (A) has smaller prediction error in both cases.**
+
+[**Final selection:**]{.underline} Model (C) = Model (A)
+
+```{r}
+modelC <- modelA_glm
+```
