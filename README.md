@@ -14,7 +14,6 @@ Department: Applied Mathematics and Statistics
 
 * SOM Chann Reaksmey (SCR)
 * NY Chantharith (NCR)
-* LY Chhaythean (LCT)
-* YENG Kheang (Y2K)
 * NGEN Tina (NGT)
-* Som Channsivmey (SCS)
+* YENG Kheang (Y2K)
+* LY Chhaythean (LCT)
