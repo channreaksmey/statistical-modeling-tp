@@ -6,7 +6,7 @@ editor: visual
 
 # TP4 - Generalized Linear Models
 
-## Problem 1
+## qProblem 1
 
 **Mroz’s Data on Women’s Labour-Force Participation**: The data in the data frame `Mroz` in the car package, originally employed by Mroz (1987), were used by Long (1997) to illustrate the method of logistic regression. The variables in the dataset are described in the following table, adapted from Long (and using Long’s variable names). Most of the variables are self-explanatory. The variable `lwg` is the log of the wife’s actual wage if she is working outside the home. For women not working outside the home, Mroz proceeded as follows: He regressed the log-wages of the working women on the other variables, and used the resulting regression equation to predict the wages of those not working outside the home.
 
@@ -110,20 +110,6 @@ For each **\$1,000 increase** in family income excluding the wife's wages, the *
 
 **Practical example with probabilities:** Suppose Woman A (lower income) has a 0.60 probability of working, which corresponds to odds of 0.60/(1-0.60) = 1.5. Woman B (income \$10,000 higher) would have odds of 1.5 × 0.708 = 1.062, corresponding to a probability of 1.062/(1+1.062) = 0.515 or about **51.5%**. Thus, the \$10,000 income difference translates to about an **8.5 percentage point reduction** in the probability of labour force participation.
 
-```{r}
-# Model diagnostics
-cat("\n=== Model Fit Statistics ===\n")
-cat("Null Deviance:", logit_model$null.deviance, "on", 
-    logit_model$df.null, "degrees of freedom\n")
-cat("Residual Deviance:", logit_model$deviance, "on", 
-    logit_model$df.residual, "degrees of freedom\n")
-cat("AIC:", AIC(logit_model), "\n")
-
-# Pseudo R-squared (McFadden's R-squared)
-pseudo_r2 <- 1 - (logit_model$deviance / logit_model$null.deviance)
-cat("McFadden's Pseudo R-squared:", round(pseudo_r2, 4), "\n")
-```
-
 ## Problem 2
 
 **Powers and Xie’s Data on High-School Graduation**: Employing a sample of 1643 men between the ages of 20 and 24 from the U. S. National Longitudinal Survey of Youth, Powers and Xie (2000) investigate the relationship between high-school graduation and parents’ education, race, family income, number of siblings, family structure, and a test of academic ability. The data set, in the file `Powers.txt` on the course web site, contains the following variables (using Powers and Xie’s variable names):
@@ -147,21 +133,1273 @@ cat("McFadden's Pseudo R-squared:", round(pseudo_r2, 4), "\n")
 The data file also contains respondent ID numbers, which are not contiguous.
 
 ```{r}
-# Load required libraries
-library(tidyverse)
-library(car)        # For likelihood ratio tests
-library(broom)      # For tidy model outputs
+powers <- read.table(
+  "~/Documents/I4-AMS-B/Statistical-Modeling/statistical-modeling-tp/TP4/Powers.txt",
+  header = TRUE,
+  fill = TRUE,
+  stringsAsFactors = FALSE
+)
 
-# Read the data
-# Assuming the file is space-delimited with header
-powers_data <- read.table("Powers.txt", header = TRUE)
+powers <- powers[complete.cases(powers), ]
 
-# Inspect the data structure
-str(powers_data)
-head(powers_data)
-summary(powers_data)
+yn_vars <- c("hsgrad", "nonwhite", "mhs", "fhs", "intact")
+
+powers[yn_vars] <- lapply(
+  powers[yn_vars],
+  function(x) ifelse(x == "Yes", 1, 0)
+)
+
+powers
 ```
 
 a\. Following Powers and Xie perform a logistic regression of `hsgrad` on the other variables in the data set. Compute a likelihood-ratio test of the omnibus null hypothesis that none of the explanatory variables influences high-school graduation. Then construct 95-percent confidence intervals for the coefficients of the seven explanatory variables. What conclusions can you draw from these results? Finally, offer two brief, but concrete, interpretations of each of the estimated coefficients of income and intact.
 
+```{r}
+# Fit the full model
+full_model <- glm(hsgrad ~ nonwhite + mhs + fhs + income + asvab + nsibs + intact, 
+                  data = powers, 
+                  family = binomial(link = "logit"))
+
+# Fit null model
+null_model <- glm(hsgrad ~ 1, 
+                  data = powers, 
+                  family = binomial(link = "logit"))
+
+# Display summary
+print(summary(full_model))
+
+```
+
+```{r}
+# Calculate LR test
+G_squared <- null_model$deviance - full_model$deviance
+df_test <- null_model$df.residual - full_model$df.residual
+p_value <- pchisq(G_squared, df_test, lower.tail = FALSE)
+
+cat("H0: β₁ = β₂ = β₃ = β₄ = β₅ = β₆ = β₇ = 0\n")
+cat("(None of the explanatory variables influence graduation)\n\n")
+cat("Test Statistics:\n")
+cat("  G² statistic:        ", round(G_squared, 3), "\n")
+cat("  Degrees of freedom:  ", df_test, "\n")
+cat("  P-value:             ", format.pval(p_value, eps = 0.001), "\n\n")
+
+if(p_value < 0.001) {
+  cat("Conclusion: STRONGLY REJECT H0 (p < 0.001) ***\n")
+  cat("At least one explanatory variable significantly influences\n")
+  cat("high-school graduation probability.\n")
+} else if(p_value < 0.05) {
+  cat("Conclusion: REJECT H0 (p < 0.05)\n")
+} else {
+  cat("Conclusion: FAIL TO REJECT H0 (p ≥ 0.05)\n")
+}
+```
+
+```{r}
+# Compute confidence intervals
+ci_95 <- confint(full_model, level = 0.95)
+
+# Create comprehensive table
+coef_table <- data.frame(
+  Variable = names(coef(full_model)),
+  Estimate = coef(full_model),
+  Std.Error = summary(full_model)$coefficients[, "Std. Error"],
+  CI_Lower = ci_95[, 1],
+  CI_Upper = ci_95[, 2],
+  z_value = summary(full_model)$coefficients[, "z value"],
+  p_value = summary(full_model)$coefficients[, "Pr(>|z|)"]
+)
+
+rownames(coef_table) <- NULL
+
+# Add significance stars
+coef_table$Sig <- cut(coef_table$p_value, 
+                      breaks = c(-Inf, 0.001, 0.01, 0.05, Inf),
+                      labels = c("***", "**", "*", ""))
+
+print(coef_table)
+
+cat("\nSignificance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05\n")
+```
+
+```{r}
+cat("A. OVERALL MODEL:\n")
+cat("   The omnibus LR test shows that the model as a whole is\n")
+cat("   highly significant, indicating that the set of predictors\n")
+cat("   significantly improves prediction of graduation over the\n")
+cat("   null model.\n\n")
+
+cat("B. INDIVIDUAL PREDICTORS (at α = 0.05):\n\n")
+
+for(i in 2:nrow(coef_table)) {  # Skip intercept
+  var <- coef_table$Variable[i]
+  est <- coef_table$Estimate[i]
+  ci_low <- coef_table$CI_Lower[i]
+  ci_high <- coef_table$CI_Upper[i]
+  p <- coef_table$p_value[i]
+  sig <- coef_table$Sig[i]
+  
+  cat("   ", var, ":\n")
+  if(p < 0.05) {
+    direction <- ifelse(est > 0, "POSITIVE", "NEGATIVE")
+    cat("      ", direction, "effect (significant", sig, ")\n")
+    cat("       CI: [", round(ci_low, 4), ",", round(ci_high, 4), "] excludes 0\n")
+  } else {
+    cat("       NOT significant (CI includes 0)\n")
+    cat("       CI: [", round(ci_low, 4), ",", round(ci_high, 4), "]\n")
+  }
+  cat("\n")
+}
+```
+
+```{r}
+# Extract coefficients
+beta_income <- coef(full_model)["income"]
+beta_intact <- coef(full_model)["intactYes"]
+
+# Calculate odds ratios
+or_income <- exp(beta_income)
+or_intact <- exp(beta_intact)
+
+# For a $10,000 increase in income
+or_income_10k <- exp(beta_income * 10)
+
+cat("INCOME VARIABLE\n")
+cat(rep("-", 70), "\n", sep="")
+cat("Coefficient:  β =", round(beta_income, 5), "\n\n")
+
+cat("Interpretation 1 (Log-Odds Scale):\n")
+cat("  For each additional $1,000 in adjusted family income, the\n")
+cat("  log-odds of graduating from high school increase by\n")
+cat("  ", round(beta_income, 5), ", holding all other variables constant.\n\n")
+
+cat("Interpretation 2 (Odds Ratio - Concrete):\n")
+cat("  For each additional $1,000 in adjusted family income, the\n")
+cat("  odds of graduating are multiplied by", round(or_income, 5), "\n")
+cat("  (or a", round((or_income - 1) * 100, 3), "% increase in odds),\n")
+cat("  holding all other variables constant.\n\n")
+
+cat("  CONCRETE EXAMPLE:\n")
+cat("  Consider two students identical in all respects except that\n")
+cat("  Student A's family has income $20,000 and Student B's family\n")
+cat("  has income $30,000 (a $10,000 difference).\n")
+cat("  Student B has odds of graduation that are", round(or_income_10k, 3), "\n")
+cat("  times the odds for Student A (", round((or_income_10k - 1) * 100, 1), "% higher).\n\n\n")
+
+cat("INTACT VARIABLE\n")
+cat(rep("-", 70), "\n", sep="")
+cat("Coefficient: β =", round(beta_intact, 5), "\n\n")
+
+cat("Interpretation 1 (Log-Odds Scale):\n")
+cat("  Students who lived with both biological parents at age 14\n")
+cat("  have log-odds of graduating that are", round(beta_intact, 5), "\n")
+cat("  units higher than students who did not live with both parents,\n")
+cat("  holding all other variables constant.\n\n")
+
+cat("Interpretation 2 (Odds Ratio - Concrete):\n")
+cat("  Students from intact families have odds of graduating that\n")
+cat("  are", round(or_intact, 4), "times the odds for students from\n")
+cat("  non-intact families (", round((or_intact - 1) * 100, 1), "% higher odds),\n")
+cat("  holding all other variables constant.\n\n")
+
+cat("  CONCRETE EXAMPLE:\n")
+cat("  Consider two students who are identical in race, parents'\n")
+cat("  education, family income, ASVAB score, and number of siblings.\n")
+cat("  If Student A is from an intact family and Student B is not,\n")
+cat("  then Student A has", round(or_intact, 2), "times the odds of\n")
+cat("  graduating compared to Student B.\n\n")
+
+```
+
 b\. The logistic regression in the previous problem assumes that the partial relationship between the log-odds of high-school graduation and number of siblings is linear. Test for nonlinearity by fitting a model that treats `nsibs` as a factor, performing an appropriate likelihood-ratio test. In the course of working this problem, you should discover two errors in the data. Deal with the errors in a reasonable manner. Does the result of the test change?
+
+## Problem 3
+
+**North Atlantic Hurricanes:** the goal of the following exercise is to build a model that predicts the group membership of a hurricanes, either tropical or non-tropical, based on the latitude of formation.
+
+```{r}
+library(openxlsx)
+hurricanes <- read.xlsx("https://userpage.fu-berlin.de/soga/data/raw-data/hurricanes.xlsx")
+str(hurricanes)
+```
+
+There are 337 observations and 12 variables in the dataset. We are primarily interested in the variable `type`, which is our response variable, and the variable `FirstLat`, which corresponds to the latitude of formation, and thus is our predictor variable.
+
+a\. Produce the following plot and give the interpretation. You may consider using the function ggplot in ‘ggplot2“ package.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(car)
+library(MASS)
+
+# Create descriptive labels
+hurricanes$Type_label <- factor(hurricanes$Type,
+                                levels = c(0, 1, 3),
+                                labels = c("tropical-only", 
+                                          "baroclinic influences",
+                                          "baroclinic initiation"))
+
+# Create the stacked bar chart
+p1 <- ggplot(hurricanes, aes(x = Year, fill = Type_label)) +
+  geom_bar(position = "stack") +
+  scale_fill_manual(values = c("tropical-only" = "#F8766D",
+                               "baroclinic influences" = "#00BA38", 
+                               "baroclinic initiation" = "#619CFF")) +
+  labs(title = "Distribution of Hurricane Types by Year",
+       x = "Year",
+       y = "count",
+       fill = "Type of Hurricane") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "right",
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 12))
+
+print(p1)
+
+# Save the plot
+ggsave("hurricane_types_by_year.pdf", plot = p1, width = 10, height = 6)
+
+```
+
+This stacked bar chart shows the frequency of different hurricane types in the North Atlantic from approximately 1950 to 2010.
+
+Key observations:
+
+1.  DOMINANCE OF TROPICAL HURRICANES (red/salmon bars): - Tropical-only hurricanes are the most common type across all years - They form the largest proportion of the total count in most years
+
+<!-- -->
+
+2.  TEMPORAL VARIATION:
+    -   Hurricane frequency varies considerably from year to year
+    -   Some years have notably high activity (e.g., around 1950, 1970, 1995)
+    -   Other years show much lower hurricane counts
+3.  NON-TROPICAL HURRICANES (green and blue):
+    -   Baroclinic influences (green) and baroclinic initiation (blue) appear more frequently in certain periods
+    -   These types seem more common in the 1960s-1970s period
+    -   They represent a smaller but consistent proportion of total hurricanes
+4.  POSSIBLE TRENDS:
+    -   There may be decadal variability in hurricane frequency
+    -   The relative proportions of types appear relatively stable
+    -   More recent decades (1990s-2000s) show continued activity
+
+b\. In class 0, tropical hurricanes, there are 187 observations, in class 1, baroclinic influences, there are 77 observations and in class 3, baroclinic initiation, there are 73 observations. Since we can only deal with dichotomous (binary) data in logistic regression, please re-code the classes and assign class 1 and 3, both are being influenced by the outer tropics, the label 1 and name the new variable `Type_new`.
+
+```{r}
+table(hurricanes$Type)
+```
+
+```{r}
+# Create binary variable
+# Type 0 (tropical) = 0 (tropical hurricane)
+# Type 1 and 3 (baroclinic) = 1 (non-tropical hurricane)
+hurricanes$Type_new <- ifelse(hurricanes$Type == 0, 0, 1)
+
+# Create labeled version
+hurricanes$Type_new_label <- factor(hurricanes$Type_new,
+                                    levels = c(0, 1),
+                                    labels = c("Tropical", "Non-Tropical"))
+
+# Verify the recoding
+cat("\nNew Type_new distribution:\n")
+print(table(hurricanes$Type_new))
+
+cat("\nCross-tabulation to verify recoding:\n")
+print(table(Original = hurricanes$Type, New = hurricanes$Type_new))
+
+cat("\nLabeled version:\n")
+print(table(hurricanes$Type_new_label))
+
+cat("\nSummary:\n")
+cat("- Tropical hurricanes (Type 0): ", sum(hurricanes$Type_new == 0), "\n")
+cat("- Non-tropical hurricanes (Type 1 & 3): ", sum(hurricanes$Type_new == 1), "\n")
+cat("- Total:  ", nrow(hurricanes), "\n")
+cat("- Proportion tropical: ", round(mean(hurricanes$Type_new == 0), 3), "\n")
+cat("- Proportion non-tropical: ", round(mean(hurricanes$Type_new == 1), 3), "\n")
+
+```
+
+c\. Fit a logistic model with Type_new as a response variable and Firstlat has predictor. Interpret the estimated coefficient of Firstlat. Obtain the 95% confident interval of the log-dd and the odd.
+
+```{r}
+# Check FirstLat variable
+cat("Summary of FirstLat:\n")
+print(summary(hurricanes$FirstLat))
+
+# Check for missing values
+cat("\nMissing values:\n")
+cat("Type_new:", sum(is.na(hurricanes$Type_new)), "\n")
+cat("FirstLat:", sum(is.na(hurricanes$FirstLat)), "\n")
+
+# Fit the logistic regression model
+model_simple <- glm(Type_new ~ FirstLat,
+                    data = hurricanes,
+                    family = binomial(link = "logit"))
+
+# Display summary
+cat("\n=== Model Summary ===\n")
+summary(model_simple)
+
+# Extract coefficient
+firstlat_coef <- coef(model_simple)["FirstLat"]
+firstlat_se <- summary(model_simple)$coefficients["FirstLat", "Std. Error"]
+firstlat_pval <- summary(model_simple)$coefficients["FirstLat", "Pr(>|z|)"]
+```
+
+```{r}
+cat("INTERPRETATION:\n")
+cat("1. LOG-ODDS INTERPRETATION:\n")
+cat("   For each 1-degree increase in latitude of formation (FirstLat),\n")
+cat("   the log-odds of a hurricane being non-tropical (vs tropical)\n")
+cat("   ", ifelse(firstlat_coef > 0, "increase", "decrease"), " by", 
+    abs(round(firstlat_coef, 4)), "\n\n")
+
+# Calculate odds ratio
+or_firstlat <- exp(firstlat_coef)
+cat("2. ODDS RATIO INTERPRETATION:\n")
+cat("   Odds Ratio:", round(or_firstlat, 4), "\n")
+cat("   For each 1-degree increase in latitude,\n")
+cat("   the odds of a hurricane being non-tropical are multiplied by", 
+    round(or_firstlat, 4), "\n")
+percent_change <- (or_firstlat - 1) * 100
+cat("   This represents a", round(abs(percent_change), 2), 
+    "% ", ifelse(percent_change > 0, "increase", "decrease"), 
+    " in odds per degree latitude.\n\n")
+
+cat("3. PRACTICAL INTERPRETATION:\n")
+if (firstlat_coef > 0) {
+  cat("   Hurricanes that form at HIGHER latitudes are MORE LIKELY\n")
+  cat("   to be non-tropical (baroclinic influences or initiation).\n")
+  cat("   This makes meteorological sense:  tropical systems form in warm,\n")
+  cat("   low-latitude regions, while baroclinic systems are associated\n")
+  cat("   with mid-latitude weather patterns.\n")
+} else {
+  cat("   Hurricanes that form at LOWER latitudes are MORE LIKELY\n")
+  cat("   to be tropical.\n")
+}
+```
+
+```{r}
+# 95% Confidence Intervals
+
+# CI for log-odds (coefficients)
+ci_logodds <- confint(model_simple)
+cat("\n1.  Confidence Interval for LOG-ODDS (coefficients):\n")
+print(round(ci_logodds, 4))
+
+# CI for odds ratios
+ci_odds <- exp(ci_logodds)
+cat("\n2. Confidence Interval for ODDS RATIOS:\n")
+print(round(ci_odds, 4))
+
+# Detailed interpretation for FirstLat
+cat("\nDetailed CI Interpretation for FirstLat:\n")
+cat("Log-odds CI: [", round(ci_logodds["FirstLat", 1], 4), ",", 
+    round(ci_logodds["FirstLat", 2], 4), "]\n")
+cat("Odds Ratio CI: [", round(ci_odds["FirstLat", 1], 4), ",", 
+    round(ci_odds["FirstLat", 2], 4), "]\n\n")
+
+cat("We are 95% confident that for each 1-degree increase in latitude,\n")
+cat("the odds of being non-tropical are multiplied by a factor between\n")
+cat(round(ci_odds["FirstLat", 1], 4), "and", round(ci_odds["FirstLat", 2], 4), "\n")
+
+# Check if CI includes 1
+if (ci_odds["FirstLat", 1] > 1 || ci_odds["FirstLat", 2] < 1) {
+  cat("Since the CI does NOT include 1.0, the effect is statistically significant.\n")
+} else {
+  cat("Since the CI includes 1.0, the effect is NOT statistically significant.\n")
+}
+```
+
+d\. Predict if a hurricane is a tropical hurricane or non-tropical hurricane with the first latitudes are 10^o^ , 23.5◦ and 30◦. You may use the `predict()` function. Please note, that if we add the argument `type = "response"` to the function call, the `predict()` function returns the probability and not the log-odds.
+
+```{r}
+# Create data for predictions
+pred_latitudes <- data.frame(FirstLat = c(10, 23.5, 30))
+
+# Predict log-odds
+pred_logodds <- predict(model_simple, newdata = pred_latitudes, type = "link")
+
+# Predict probabilities
+pred_probs <- predict(model_simple, newdata = pred_latitudes, type = "response")
+
+# Standard errors for confidence intervals
+pred_se <- predict(model_simple, newdata = pred_latitudes, type = "link", se.fit = TRUE)
+
+# Calculate 95% CI for log-odds
+ci_lower_logodds <- pred_se$fit - 1.96 * pred_se$se.fit
+ci_upper_logodds <- pred_se$fit + 1.96 * pred_se$se.fit
+
+# Convert to probability scale
+ci_lower_prob <- exp(ci_lower_logodds) / (1 + exp(ci_lower_logodds))
+ci_upper_prob <- exp(ci_upper_logodds) / (1 + exp(ci_upper_logodds))
+
+# Create results table
+pred_results <- data.frame(
+  Latitude = pred_latitudes$FirstLat,
+  Log_Odds = round(pred_logodds, 4),
+  Probability_NonTropical = round(pred_probs, 4),
+  Prob_CI_Lower = round(ci_lower_prob, 4),
+  Prob_CI_Upper = round(ci_upper_prob, 4),
+  Predicted_Type = ifelse(pred_probs > 0.5, "Non-Tropical", "Tropical")
+)
+```
+
+```{r}
+cat("\n=== Prediction Results ===\n")
+print(pred_results)
+
+# Detailed interpretation
+cat("\n=== DETAILED INTERPRETATIONS ===\n\n")
+
+for (i in 1:nrow(pred_results)) {
+  cat("LATITUDE:", pred_results$Latitude[i], "degrees\n")
+  cat("  - Log-odds:", pred_results$Log_Odds[i], "\n")
+  cat("  - Probability of being NON-TROPICAL:", 
+      round(pred_results$Probability_NonTropical[i] * 100, 2), "%\n")
+  cat("  - Probability of being TROPICAL:", 
+      round((1 - pred_results$Probability_NonTropical[i]) * 100, 2), "%\n")
+  cat("  - 95% CI for probability:  [", 
+      round(pred_results$Prob_CI_Lower[i] * 100, 2), "% - ",
+      round(pred_results$Prob_CI_Upper[i] * 100, 2), "%]\n")
+  cat("  - PREDICTION:", pred_results$Predicted_Type[i], 
+      "(using 0.5 threshold)\n")
+  
+  if (pred_results$Latitude[i] == 10) {
+    cat("  - INTERPRETATION: At 10°N (low latitude, near equator),\n")
+    cat("    hurricanes are VERY LIKELY to be tropical.\n")
+  } else if (pred_results$Latitude[i] == 23.5) {
+    cat("  - INTERPRETATION: At 23.5°N (Tropic of Cancer),\n")
+    cat("    this is a transitional latitude.\n")
+  } else if (pred_results$Latitude[i] == 30) {
+    cat("  - INTERPRETATION:  At 30°N (subtropical/mid-latitude),\n")
+    cat("    hurricanes are MORE LIKELY to have baroclinic influences.\n")
+  }
+  cat("\n")
+}
+```
+
+e\. Now consider all the variables in the data. Choose the best model (with only main effects).
+
+```{r}
+# Check all available variables
+cat("Available variables:\n")
+print(names(hurricanes))
+
+# Check for complete cases
+complete_data <- hurricanes[complete.cases(hurricanes), ]
+cat("\nOriginal observations:", nrow(hurricanes), "\n")
+cat("Complete observations:", nrow(complete_data), "\n")
+cat("Observations with missing data:", nrow(hurricanes) - nrow(complete_data), "\n")
+
+# Identify numeric vs categorical variables
+cat("\nVariable types:\n")
+str(hurricanes)
+
+# Fit full model with all relevant predictors
+# Exclude:  Type (original), Type_label, Type_new_label (derived variables)
+# Exclude: ID variables if any
+
+cat("\n=== Fitting Full Model with All Predictors ===\n")
+
+# Full model (adjust based on actual variable names in your data)
+model_full <- glm(Type_new ~ Year + FirstLat + FirstLon + MaxLat + 
+                    MaxLon + LastLat + LastLon + MaxInt, 
+                  data = hurricanes, family = binomial(link = "logit"))
+
+summary(model_full)
+```
+
+```{r}
+cat("\n=== Model Selection using Stepwise AIC ===\n")
+
+# Backward selection using AIC
+model_backward <- step(model_full, direction = "backward", trace = 1)
+
+cat("\n=== Best Model (Backward Selection) ===\n")
+summary(model_backward)
+
+# Forward selection starting from simple model
+model_forward <- step(model_simple, 
+                      scope = list(lower = model_simple, upper = model_full),
+                      direction = "forward", trace = 1)
+
+cat("\n=== Best Model (Forward Selection) ===\n")
+summary(model_forward)
+
+# Both directions
+model_both <- step(model_simple,
+                   scope = list(lower = model_simple, upper = model_full),
+                   direction = "both", trace = 1)
+
+cat("\n=== Best Model (Stepwise Both Directions) ===\n")
+summary(model_both)
+
+# Compare models
+cat("\n=== Model Comparison ===\n")
+cat("Simple model AIC:", AIC(model_simple), "\n")
+cat("Full model AIC:", AIC(model_full), "\n")
+cat("Backward selection AIC:", AIC(model_backward), "\n")
+cat("Forward selection AIC:", AIC(model_forward), "\n")
+cat("Stepwise both AIC:", AIC(model_both), "\n")
+
+# Choose best model
+best_model <- model_backward  # or whichever has lowest AIC
+
+cat("\n=== Final Best Model Summary ===\n")
+summary(best_model)
+```
+
+f\. Check if there is overdispersion in the model. Take it into account if there is.
+
+```{r}
+cat("\nWhat is overdispersion?\n")
+cat("- In logistic regression, the variance should equal μ(1-μ)\n")
+cat("- Overdispersion occurs when actual variance > expected variance\n")
+cat("- This can happen due to:\n")
+cat("  * Missing important predictors\n")
+cat("  * Clustering in data\n")
+cat("  * Outliers or extreme values\n")
+cat("- Overdispersion leads to underestimated standard errors\n")
+cat("  and inflated significance tests\n\n")
+
+# Calculate dispersion parameter
+residual_deviance_best <- best_model$deviance
+df_residual_best <- best_model$df.residual
+dispersion_param <- residual_deviance_best / df_residual_best
+
+cat("=== Dispersion Check ===\n")
+cat("Residual Deviance:", round(residual_deviance_best, 4), "\n")
+cat("Residual df:", df_residual_best, "\n")
+cat("Dispersion Parameter (φ):", round(dispersion_param, 4), "\n\n")
+
+cat("INTERPRETATION:\n")
+cat("- If φ ≈ 1:  No overdispersion (good! )\n")
+cat("- If φ > 1: Overdispersion present\n")
+cat("- If φ >> 1 (e.g., > 2-3): Serious overdispersion\n\n")
+```
+
+```{r}
+if (dispersion_param > 1.5) {
+  cat("RESULT: Overdispersion detected (φ =", round(dispersion_param, 4), ")\n")
+  cat("ACTION REQUIRED: Adjust for overdispersion\n\n")
+  
+  # Formal test for overdispersion
+  cat("=== Formal Test for Overdispersion ===\n")
+  
+  # Chi-square test
+  p_value_overdisp <- pchisq(residual_deviance_best, df_residual_best, lower.tail = FALSE)
+  cat("H0: No overdispersion (deviance follows chi-square distribution)\n")
+  cat("Test statistic (deviance):", round(residual_deviance_best, 4), "\n")
+  cat("df:", df_residual_best, "\n")
+  cat("p-value:", format.pval(p_value_overdisp), "\n")
+  
+  if (p_value_overdisp < 0.05) {
+    cat("Conclusion:  SIGNIFICANT overdispersion (p < 0.05)\n\n")
+  } else {
+    cat("Conclusion: No significant evidence of overdispersion\n\n")
+  }
+  
+  # Adjust for overdispersion using quasi-binomial
+  cat("=== Fitting Quasi-Binomial Model ===\n")
+  cat("This accounts for overdispersion by estimating φ from the data\n\n")
+  
+  # Refit best model with quasi-binomial family
+  formula_best <- formula(best_model)
+  model_quasi <- glm(formula_best,
+                     data = hurricanes,
+                     family = quasibinomial(link = "logit"))
+  
+  summary(model_quasi)
+  
+  cat("\n=== Comparison:  Binomial vs Quasi-Binomial ===\n\n")
+  
+  # Compare coefficients (should be the same)
+  cat("Coefficients (should be identical):\n")
+  comp_coef <- data.frame(
+    Binomial = coef(best_model),
+    QuasiBinomial = coef(model_quasi)
+  )
+  print(round(comp_coef, 4))
+  
+  # Compare standard errors (quasi should be larger)
+  cat("\nStandard Errors (quasi should be larger):\n")
+  se_binomial <- summary(best_model)$coefficients[, "Std. Error"]
+  se_quasi <- summary(model_quasi)$coefficients[, "Std. Error"]
+  comp_se <- data.frame(
+    Binomial = se_binomial,
+    QuasiBinomial = se_quasi,
+    Ratio = se_quasi / se_binomial
+  )
+  print(round(comp_se, 4))
+  
+  cat("\nThe ratio shows how much the SE increased to account for overdispersion.\n")
+  cat("Standard errors inflated by factor of:", round(sqrt(dispersion_param), 4), "\n\n")
+  
+  # Compare p-values
+  cat("P-values comparison:\n")
+  p_binomial <- summary(best_model)$coefficients[, "Pr(>|z|)"]
+  p_quasi <- summary(model_quasi)$coefficients[, "Pr(>|t|)"]
+  comp_p <- data.frame(
+    Binomial = p_binomial,
+    QuasiBinomial = p_quasi,
+    Significant_Binomial = p_binomial < 0.05,
+    Significant_Quasi = p_quasi < 0.05
+  )
+  print(comp_p)
+  
+  cat("\n=== RECOMMENDATION ===\n")
+  cat("Since overdispersion is present, USE THE QUASI-BINOMIAL MODEL\n")
+  cat("for inference (hypothesis tests, confidence intervals).\n")
+  cat("The quasi-binomial model provides more conservative (and more accurate)\n")
+  cat("standard errors and p-values.\n\n")
+  
+  # Save the final model
+  final_model <- model_quasi
+  cat("Final model:  Quasi-binomial with dispersion parameter", 
+      round(summary(model_quasi)$dispersion, 4), "\n")
+  
+} else {
+  cat("RESULT: No substantial overdispersion (φ =", round(dispersion_param, 4), ")\n")
+  cat("The standard binomial logistic regression is appropriate.\n\n")
+  
+  final_model <- best_model
+  cat("Final model: Standard binomial logistic regression\n")
+}
+```
+
+## Problem 4
+
+Given the dataset `Default` with 4 variables. The goal is to build a logistic regression model to predict `default`.
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+library(ISLR)
+data(Default)
+head(Default)
+```
+
+#### a. Explore the relationship between `default` and other variables (`income`, `balance`, `student`). You may create some scatterplots, and boxplots.
+
+```{r}
+library(ggplot2)
+library(GGally)
+library(car)
+library(gridExtra)
+```
+
+```{r}
+# 1. Distribution of Response Variable
+p1 <- ggplot(Default, aes(x = default, fill = default)) +
+  geom_bar() +
+  geom_text(stat = 'count', aes(label = after_stat(count)), vjust = -0.5) +
+  scale_fill_manual(values = c("No" = "#00BA38", "Yes" = "#F8766D")) +
+  labs(title = "Distribution of Credit Default",
+       x = "Default Status",
+       y = "Count") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p1)
+```
+
+-   The green bar completely dominates the chart
+
+-   The red bar is barely visible in comparison
+
+-   The scale difference is dramatic (\~9,667 vs 333)
+
+This chart reveals a **severely imbalanced dataset** where defaults are rare (only 3.33%). While most customers are responsible, identifying the risky minority is critical for bank profitability. The extreme imbalance means standard accuracy metrics are misleading, and we must focus on sensitivity and use appropriate threshold selection to balance the business costs of false positives versus false negatives. With only 333 default cases, our model will have limited power to detect complex interactions, but should still effectively identify high-risk customers based on balance and other key predictors
+
+```{r}
+# 2. Default Rate by Student Status
+student_default <- Default %>%
+  group_by(student, default) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(student) %>%
+  mutate(proportion = count / sum(count))
+
+print(student_default)
+
+p2 <- ggplot(Default, aes(x = student, fill = default)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual(values = c("No" = "#00BA38", "Yes" = "#F8766D")) +
+  labs(title = "Default Rate by Student Status",
+       x = "Student",
+       y = "Proportion",
+       fill = "Default") +
+  theme_minimal(base_size = 14)
+
+print(p2)
+```
+
+-   The **red portion (defaults)** is visibly **larger** for students (right bar)
+
+-   The **green portion (non-defaults)** is slightly smaller for students
+
+-   Both bars reach 100% (proportion = 1.0), making it easy to compare rates
+
+The crude comparison shows students have a 48% higher default rate (4.31% vs 2.92%, p \< 0.001). However, this crude association is likely confounded by students' higher average credit card balances and lower incomes. In the multivariable logistic regression, after controlling for balance and income, we expect the student coefficient to reverse direction, showing that students actually have LOWER odds of default at the same debt and income levels. This is a classic example of Simpson's Paradox, where a confounding variable (balance) masks the true relationship. The implication is that student status itself is not a risk factor; rather, it's a marker for different financial circumstances that can be directly addressed through credit limit management.
+
+```{r}
+# 3. Boxplots:  Balance by Default Status
+cat("\n=== Balance Distribution by Default ===\n")
+p3 <- ggplot(Default, aes(x = default, y = balance, fill = default)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("No" = "#00BA38", "Yes" = "#F8766D")) +
+  labs(title = "Credit Card Balance by Default Status",
+       x = "Default Status",
+       y = "Balance ($)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p3)
+
+# Statistical test
+cat("t-test for balance by default:\n")
+print(t.test(balance ~ default, data = Default))
+```
+
+```{r}
+# 4. Boxplots: Income by Default Status
+cat("\n=== Income Distribution by Default ===\n")
+p4 <- ggplot(Default, aes(x = default, y = income, fill = default)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("No" = "#00BA38", "Yes" = "#F8766D")) +
+  labs(title = "Annual Income by Default Status",
+       x = "Default Status",
+       y = "Income ($)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p4)
+
+# Statistical test
+cat("t-test for income by default:\n")
+print(t.test(income ~ default, data = Default))
+```
+
+**Non-Defaulters (Green Box - Left):**
+
+-   **Median**: \~\$750 (dark horizontal line)
+
+-   **IQR (box)**: \~\$400 to \~\$1,100
+
+-   **Whiskers**: Extend to \~\$0 and \~\$2,200
+
+-   **Outliers**: A few black dots above \$2,200 (high balance but didn't default)
+
+-   **Distribution**: Lower, more compressed
+
+**Defaulters (Red/Pink Box - Right):**
+
+-   **Median**: \~\$1,800 (dark horizontal line)
+
+-   **IQR (box)**: \~\$1,450 to \~\$2,000
+
+-   **Whiskers**: Extend to \~\$1,000 and \~\$2,200
+
+-   **Outliers**: A few black dots below \$750 (low balance but still defaulted - rare!)
+
+-   **Distribution**: Higher, more compressed at top
+
+Credit card balance is by far the strongest predictor of default in this dataset. Defaulters have mean balance of \$1,748 compared to \$804 for non-defaulters - a difference of \$944 (117% higher). This difference is extraordinarily statistically significant (t = -48.98, p \< 2.2e-16). The boxplots show almost complete separation between groups, with defaulters' balances clustering around \$1,500-\$2,000 while non-defaulters center around \$700-\$800. There appears to be a critical threshold around \$1,000-\$1,500, above which default risk increases dramatically. In the logistic regression model, balance will dominate other predictors and drive most of the classification accuracy. The practical implication is that credit card companies should focus intensively on monitoring and managing customer balances, as this single metric provides exceptional predictive power for default risk.
+
+```{r}
+# 5. Boxplots: Balance by Student Status
+p5 <- ggplot(Default, aes(x = student, y = balance, fill = student)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("No" = "#619CFF", "Yes" = "#F564E3")) +
+  labs(title = "Balance by Student Status",
+       x = "Student",
+       y = "Balance ($)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+
+print(p5)
+```
+
+**Non-Students (Blue Box - Left)**
+
+**Central Tendency:**
+
+-   **Median**: \~\$750 (thick horizontal black line in middle of box)
+
+-   Position: Lower third of the balance range
+
+**Spread (Interquartile Range - IQR):**
+
+-   **25th percentile (Q1)**: \~\$400 (bottom of box)
+
+-   **75th percentile (Q3)**: \~\$1,100 (top of box)
+
+-   **IQR**: \~\$700 (height of the blue box)
+
+**Whiskers (Range):**
+
+-   **Lower whisker**: non-students with unusually high balances
+
+-   Approximately 10-15 outlier points visible
+
+**Distribution characteristics:**
+
+-   **Center:** Lower (median \~\$750)
+
+-   **Spread:** Moderate variability
+
+-   **Shape:** Right-skewed (outliers on high end)
+
+**Students (Pink/Magenta Box - Right)**
+
+**Box (Interquartile Range):**
+
+-   **Lower quartile (Q1):** \~\$650
+
+-   **Median (dark line):** \~\$1,000
+
+-   **Upper quartile (Q3):** \~\$1,400
+
+-   **IQR:** \~\$750 (\$1,400 - \$650)
+
+**Whiskers:**
+
+-   **Lower whisker:** Extends down to \~\$0
+
+-   **Upper whisker:** Extends up to \~\$2,300
+
+**Outliers:**
+
+-   **Several black dots above upper whisker** (\~\$2,300 - \$2,650)
+
+-   Fewer outliers than non-students (approximately 5-8 points)
+
+-   But they reach similar maximum values
+
+**Distribution characteristics:**
+
+-   **Center:** Higher (median \~\$1,000)
+
+-   **Spread:** Similar variability to non-students
+
+-   **Shape:** Also right-skewed
+
+Students carry significantly higher credit card balances than non-students (median \$1,000 vs \$750, p \< 0.001). This \$250 difference in median balance explains why students have a higher crude default rate (4.31% vs 2.92%) - balance is the mechanism through which student status affects default risk. However, the substantial overlap in balance distributions between groups, and the presence of high-balance individuals in both populations, suggests that balance itself is the critical predictor rather than student status per se. In the multivariable logistic regression, after controlling for balance and income, we expect the student coefficient to be negative, indicating that at the same balance level, students are actually less likely to default. This plot provides visual evidence of the confounding relationship that creates Simpson's Paradox in this dataset.
+
+#### b. Check if two-ways and three-way interactions are significant.
+
+```{r}
+# Convert default to numeric for modeling (Yes = 1, No = 0)
+Default$default_numeric <- ifelse(Default$default == "Yes", 1, 0)
+
+# Base model (main effects only)
+cat("=== Model 1: Main Effects Only ===\n")
+model_main <- glm(default ~ student + balance + income,
+                  data = Default,
+                  family = binomial(link = "logit"))
+
+summary(model_main)
+cat("AIC (Main Effects):", AIC(model_main), "\n\n")
+```
+
+```{r}
+# Model 2: student * balance
+cat("=== Model 2: Main Effects + student: balance ===\n")
+model_student_balance <- glm(default ~ student + balance + income + student:balance,
+                             data = Default,
+                             family = binomial(link = "logit"))
+
+summary(model_student_balance)
+cat("AIC:", AIC(model_student_balance), "\n\n")
+
+# Test significance of interaction
+cat("Test for student:balance interaction:\n")
+anova_sb <- anova(model_main, model_student_balance, test = "Chisq")
+print(anova_sb)
+```
+
+**Interpretation:**
+
+-   The effect of balance on default **does NOT differ significantly** between students and non-students
+
+-   Students and non-students show similar balance-to-default relationships
+
+-   The coefficient is tiny (-0.000218) and statistically insignificant
+
+**What this means:**
+
+-   ❌ **HYPOTHESIS REJECTED**: "Balance affects students differently"
+
+-   ✅ Balance has a **universal effect** across both groups
+
+-   For every \$1,000 increase in balance, the odds multiply by the same factor for students and non-students
+
+-   No evidence that students are more/less sensitive to high balances
+
+```{r}
+# Model 3: student * income
+cat("\n=== Model 3: Main Effects + student:income ===\n")
+model_student_income <- glm(default ~ student + balance + income + student:income,
+                            data = Default,
+                            family = binomial(link = "logit"))
+
+summary(model_student_income)
+cat("AIC:", AIC(model_student_income), "\n\n")
+
+# Test significance
+cat("Test for student:income interaction:\n")
+anova_si <- anova(model_main, model_student_income, test = "Chisq")
+print(anova_si)
+```
+
+**Interpretation:**
+
+-   The effect of income on default **does NOT differ** between students and non-students
+
+-   Income is already a weak predictor (main effect p = 0.712)
+
+-   Adding interaction makes it no better
+
+**What this means:**
+
+-   ❌ **HYPOTHESIS REJECTED**: "Income affects students differently"
+
+-   ✅ Income has **minimal effect** for everyone
+
+-   No evidence that students benefit more/less from higher income
+
+```{r}
+# Model 4: balance * income
+cat("\n=== Model 4: Main Effects + balance:income ===\n")
+model_balance_income <- glm(default ~ student + balance + income + balance:income,
+                            data = Default,
+                            family = binomial(link = "logit"))
+
+summary(model_balance_income)
+cat("AIC:", AIC(model_balance_income), "\n\n")
+
+# Test significance
+cat("Test for balance:income interaction:\n")
+anova_bi <- anova(model_main, model_balance_income, test = "Chisq")
+print(anova_bi)
+```
+
+**Interpretation:**
+
+-   The joint effect of balance and income **does NOT exist**
+
+-   Balance effect doesn't depend on income level
+
+-   No evidence of debt-to-income ratio mattering
+
+**What this means:**
+
+-   ❌ **HYPOTHESIS REJECTED**: "High balance is worse at low income"
+
+-   ✅ Balance effect is **constant across income levels**
+
+-   The coefficient is essentially zero (6.3 × 10⁻⁹)
+
+**Practical implication:**
+
+-   Debt-to-income ratio doesn't add predictive value
+
+-   Balance alone captures the risk, regardless of income
+
+-   This is surprising but clear in the data
+
+```{r}
+# Model 5: All two-way interactions
+cat("\n=== Model 5: All Two-Way Interactions ===\n")
+model_all_2way <- glm(default ~ student * balance + student * income + balance * income,
+                      data = Default,
+                      family = binomial(link = "logit"))
+
+summary(model_all_2way)
+cat("AIC:", AIC(model_all_2way), "\n\n")
+
+# Test significance
+cat("Test for all two-way interactions:\n")
+anova_all2 <- anova(model_main, model_all_2way, test = "Chisq")
+print(anova_all2)
+```
+
+**Interpretation:**
+
+-   Even testing all three interactions **jointly** shows no significance
+
+-   p = 0.923 means there's a 92% chance we'd see this improvement by random chance alone
+
+-   AIC increases by **5.5 points** - substantially worse model
+
+-   Adding 3 parameters provides essentially **zero improvement**
+
+**What this means:**
+
+-   ❌ **NO INTERACTIONS ARE NEEDED**
+
+-   Main effects model is clearly superior
+
+-   Interactions only add noise and complexity
+
+```{r}
+# Model 6: Three-way interaction
+cat("\n=== Model 6: Three-Way Interaction ===\n")
+model_3way <- glm(default ~ student * balance * income,
+                  data = Default,
+                  family = binomial(link = "logit"))
+
+summary(model_3way)
+cat("AIC:", AIC(model_3way), "\n\n")
+
+# Test significance of three-way interaction
+cat("Test for three-way interaction:\n")
+anova_3way <- anova(model_all_2way, model_3way, test = "Chisq")
+print(anova_3way)
+
+# Also compare to main effects
+cat("\nThree-way model vs main effects only:\n")
+anova_3way_main <- anova(model_main, model_3way, test = "Chisq")
+print(anova_3way_main)
+```
+
+**Interpretation:**
+
+-   The three-way interaction is **completely insignificant**
+
+-   p = 0.965 is about as far from significant as possible
+
+-   AIC = 1587.0 is the **worst** of all models tested
+
+-   The coefficient is infinitesimally small (-2.93 × 10⁻⁸)
+
+**What this means:**
+
+-   ❌ **STRONGLY REJECT THREE-WAY INTERACTION**
+
+-   No evidence that the balance-income relationship differs for students
+
+-   This complex interaction adds nothing but overfitting
+
+```{r}
+# --- Summary of Interaction Tests ---
+
+cat("\n\n=== SUMMARY OF INTERACTION TESTS ===\n\n")
+
+interaction_summary <- data.frame(
+  Interaction = c("student:balance", "student:income", "balance:income", 
+                  "All 2-way", "3-way"),
+  AIC = c(AIC(model_student_balance), AIC(model_student_income), 
+          AIC(model_balance_income), AIC(model_all_2way), AIC(model_3way)),
+  p_value = c(
+    anova_sb$`Pr(>Chi)`[2],
+    anova_si$`Pr(>Chi)`[2],
+    anova_bi$`Pr(>Chi)`[2],
+    anova_all2$`Pr(>Chi)`[2],
+    anova_3way_main$`Pr(>Chi)`[2]
+  ),
+  Significant = c(
+    anova_sb$`Pr(>Chi)`[2] < 0.05,
+    anova_si$`Pr(>Chi)`[2] < 0.05,
+    anova_bi$`Pr(>Chi)`[2] < 0.05,
+    anova_all2$`Pr(>Chi)`[2] < 0.05,
+    anova_3way_main$`Pr(>Chi)`[2] < 0.05
+  )
+)
+
+print(interaction_summary)
+
+```
+
+**Statistical Evidence:**
+
+-   **ALL p-values \> 0.60** (none even close to 0.05 threshold)
+
+-   **ALL AIC values INCREASE** (worse fit when adding interactions)
+
+-   **Deviance reductions are TINY** (\< 1 point improvements)
+
+-   **Main effects model is the BEST** (lowest AIC = 1579.5)
+
+**None of the interactions are statistically significant:**
+
+1.  **student:balance interaction**: Not significant (p = 0.649)
+
+    -   The effect of balance on default does not differ between students and non-students
+
+2.  **student:income interaction**: Not significant (p = 0.606)
+
+    -   The effect of income on default does not differ between students and non-students
+
+3.  **balance:income interaction**: Not significant (p = 0.710)
+
+    -   The effect of balance on default does not depend on income level
+
+    -   No evidence of debt-to-income ratio effect
+
+4.  **All two-way interactions jointly**: Not significant (p = 0.923)
+
+    -   Even testing all three together shows no improvement
+
+5.  **Three-way interaction**: Not significant (p = 0.744 for 3-way term alone, p = 0.965 comparing to main effects)
+
+    -   The most complex interaction adds nothing
+
+**Model selection:** The **main effects model** is clearly best:
+
+-   Lowest AIC (1579.5)
+
+-   All interaction models have higher (worse) AIC
+
+-   Simple, interpretable, and adequate
+
+c\. Choose the best model (including interactions if they are significant). Interpret the coefficient estimate of model.
+
+```{r}
+# Compare all models
+cat("=== AIC Comparison of All Models ===\n")
+model_comparison <- data.frame(
+  Model = c("Main Effects", "student: balance", "student:income", 
+            "balance:income", "All 2-way", "3-way"),
+  Formula = c("~ student + balance + income",
+              "~ student + balance + income + student:balance",
+              "~ student + balance + income + student: income",
+              "~ student + balance + income + balance:income",
+              "~ student * balance + student * income + balance * income",
+              "~ student * balance * income"),
+  N_Parameters = c(length(coef(model_main)),
+                   length(coef(model_student_balance)),
+                   length(coef(model_student_income)),
+                   length(coef(model_balance_income)),
+                   length(coef(model_all_2way)),
+                   length(coef(model_3way))),
+  AIC = c(AIC(model_main), AIC(model_student_balance), AIC(model_student_income),
+          AIC(model_balance_income), AIC(model_all_2way), AIC(model_3way)),
+  Deviance = c(deviance(model_main), deviance(model_student_balance),
+               deviance(model_student_income), deviance(model_balance_income),
+               deviance(model_all_2way), deviance(model_3way)),
+  Pseudo_R2 = c(
+    1 - deviance(model_main) / model_main$null.deviance,
+    1 - deviance(model_student_balance) / model_student_balance$null.deviance,
+    1 - deviance(model_student_income) / model_student_income$null.deviance,
+    1 - deviance(model_balance_income) / model_balance_income$null.deviance,
+    1 - deviance(model_all_2way) / model_all_2way$null.deviance,
+    1 - deviance(model_3way) / model_3way$null.deviance
+  )
+)
+
+model_comparison <- model_comparison[order(model_comparison$AIC), ]
+print(model_comparison)
+
+cat("\n*** Best Model by AIC:", model_comparison$Model[1], "***\n")
+
+```
+
+```{r}
+# Select best model
+if (model_comparison$Model[1] == "Main Effects") {
+  best_model <- model_main
+} else if (model_comparison$Model[1] == "student:balance") {
+  best_model <- model_student_balance
+} else if (model_comparison$Model[1] == "student: income") {
+  best_model <- model_student_income
+} else if (model_comparison$Model[1] == "balance:income") {
+  best_model <- model_balance_income
+} else if (model_comparison$Model[1] == "All 2-way") {
+  best_model <- model_all_2way
+} else {
+  best_model <- model_3way
+}
+
+# Stepwise selection as alternative
+cat("\n=== Stepwise Model Selection ===\n")
+model_stepwise <- step(model_main, 
+                       scope = list(lower = model_main, upper = model_3way),
+                       direction = "both", trace = 1)
+
+cat("\n=== Stepwise Selected Model ===\n")
+summary(model_stepwise)
+
+# Compare stepwise with best by AIC
+cat("\nComparison:\n")
+cat("Best by manual AIC:", model_comparison$Model[1], "- AIC =", 
+    round(model_comparison$AIC[1], 2), "\n")
+cat("Stepwise selected:  AIC =", round(AIC(model_stepwise), 2), "\n")
+
+# Use the best model
+if (AIC(model_stepwise) < AIC(best_model)) {
+  final_model <- model_stepwise
+  cat("\nFinal Model:  Stepwise selected model\n")
+} else {
+  final_model <- best_model
+  cat("\nFinal Model:", model_comparison$Model[1], "\n")
+}
+```
+
+**MODEL SELECTION**
+
+### **Complete Model Comparison**
+
+| **Model** | **Formula** | **AIC** | **Rank** |
+|----|----|----|----|
+| **Main Effects** ✓ | `~ student + balance + income` | **1579.54** | **1st (BEST)** |
+| student:income | `~ student + balance + income + student:income` | 1581.28 | 2nd |
+| student: balance | `~ student + balance + income + student:balance` | 1581.34 | 3rd |
+| balance:income | `~ student + balance + income + balance:income` | 1581.41 | 4th |
+| All 2-way | `~ student * balance + student * income + balance * income` | 1585.07 | 5th |
+| 3-way | `~ student * balance * income` | 1586.96 | 6th (WORST) |
+
+```         
+Start:  AIC = 1579.54
+default ~ student + balance + income
+
+Candidate additions:
+  + student:income   → AIC = 1581.3  (WORSE)
+  + student:balance  → AIC = 1581.3  (WORSE)
+  + balance:income   → AIC = 1581.4  (WORSE)
+  
+Decision: <none> (keep main effects only) Stepwise selection confirms the main effects model is optimal.
+```
+
+Final Model : Main effect - Model 1
+
+1.  **Balance is THE critical predictor** (z = 24.7, p \< 0.001)
+
+    -   Exponential relationship with default
+
+    -   \$1,000 increase multiplies odds by 310
+
+    -   Explains 46% of deviance alone
+
+2.  **Students are SAFER after adjustment** (OR = 0.52, p = 0.006)
+
+    -   Simpson's Paradox: crude rate higher, adjusted rate lower
+
+    -   Family support likely explanation
+
+    -   Don't discriminate against students!
+
+3.  **Income doesn't matter** (p = 0.71)
+
+    -   No significant effect after controlling for balance
+
+    -   Balance captures financial distress better
+
+    -   Could be dropped from model
+
+4.  **No interactions needed** (all p \> 0.60)
+
+    -   Additive model is optimal
+
+    -   Universal risk assessment rules
+
+    -   Simpler is better!
+
+5.  **Excellent model performance**
+
+    -   Pseudo R² = 0.462 (exceptionally strong)
+
+    -   AIC = 1579.54 (best of all models)
+
+    -   High discrimination ability
