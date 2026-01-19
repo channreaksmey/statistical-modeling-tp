@@ -2699,7 +2699,7 @@ cat("This means we can explain approximately", round(pseudo_r2 * 100, 1),
 
 We can predict the number of college applications **very accurately**. With an R-squared of 92.4%, our models explain over 90% of the variance in application numbers. The best models have an RMSE around 1,317 applications, which means predictions are typically off by about 1,300 applications. Given that the average college receives 3,204 applications with a standard deviation of 4,790, this represents excellent predictive performance—we're predicting within roughly 41% of the mean and 27% of one standard deviation.
 
-### Comparison of Methods
+**Comparison of Methods**
 
 There is **very little difference** among the test errors for most approaches:
 
@@ -2733,12 +2733,540 @@ There is **very little difference** among the test errors for most approaches:
 
 We have seen that as the number of features used in a model increases, the training error will necessarily decrease, but the test error may not. We will now explore this in a simulated data set.
 
-1\. Generate a data set with p = 20 features, n = 1,000 observations, and an associated quantitative response vector generated according to the model Y= Xβ+ ϵ where β has some elements that are exactly equal to zero.
+#### 1. Generate a data set with $p = 20$ features, $n = 1,000$ observations, and an associated quantitative response vector generated according to the model $$
+Y = X\beta + \epsilon
+$$where $\beta$ has some elements that are exactly equal to zero.
 
-2\. Split your data set into a training set containing 100 observations and a test set containing 900 observations.
+```{r}
+# Load required libraries
+library(leaps)      # For regsubsets (best subset selection)
+library(ggplot2)    # For advanced plotting
+library(gridExtra)  # For arranging multiple plots
+library(dplyr)      # For data manipulation
 
-3\. Perform best subset selection on the training set, and plot the training set MSE associated with the best model of each size.
+set.seed(123)  # For reproducibility
+```
+
+```{r}
+# Parameters
+n <- 1000  # Total observations
+p <- 20    # Number of features
+
+# Generate predictor matrix X
+# Features are generated from standard normal distribution
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+colnames(X) <- paste0("X", 1:p)
+
+# Define true beta coefficients
+# Some coefficients are exactly zero to create sparse model
+# This simulates real-world scenario where not all features are relevant
+
+beta_true <- c(
+  3.5,   # X1  - Strong positive effect
+  -2.8,  # X2  - Strong negative effect
+  1.5,   # X3  - Moderate positive effect
+  0,     # X4  - Zero (irrelevant)
+  0,     # X5  - Zero (irrelevant)
+  2.2,   # X6  - Moderate positive effect
+  0,     # X7  - Zero (irrelevant)
+  -1.8,  # X8  - Moderate negative effect
+  0,     # X9  - Zero (irrelevant)
+  0,     # X10 - Zero (irrelevant)
+  1.2,   # X11 - Small positive effect
+  0,     # X12 - Zero (irrelevant)
+  0,     # X13 - Zero (irrelevant)
+  0,     # X14 - Zero (irrelevant)
+  -0.9,  # X15 - Small negative effect
+  0,     # X16 - Zero (irrelevant)
+  0,     # X17 - Zero (irrelevant)
+  0,     # X18 - Zero (irrelevant)
+  0,     # X19 - Zero (irrelevant)
+  0      # X20 - Zero (irrelevant)
+)
+```
+
+```{r}
+# Count non-zero coefficients (true model size)
+true_model_size <- sum(beta_true != 0)
+
+cat("True Beta Coefficients:\n")
+beta_df <- data.frame(
+  Feature = paste0("X", 1:p),
+  Coefficient = beta_true,
+  Status = ifelse(beta_true == 0, "Zero (Irrelevant)", "Non-Zero (Relevant)")
+)
+print(beta_df)
+
+cat("\n\nTrue Model Characteristics:\n")
+cat(sprintf("- Number of relevant features: %d\n", true_model_size))
+cat(sprintf("- Number of irrelevant features: %d\n", p - true_model_size))
+cat(sprintf("- True model includes:  %s\n", 
+            paste(paste0("X", which(beta_true != 0)), collapse = ", ")))
+```
+
+```{r}
+# Generate error term
+# Using standard normal errors
+epsilon <- rnorm(n, mean = 0, sd = 2)
+
+# Generate response variable Y = Xβ + ε
+Y <- X %*% beta_true + epsilon
+
+# Calculate theoretical R²
+signal_variance <- var(X %*% beta_true)
+noise_variance <- var(epsilon)
+theoretical_R2 <- signal_variance / (signal_variance + noise_variance)
+
+cat(sprintf("\nTheoretical R² (population): %.4f\n", theoretical_R2))
+cat(sprintf("Signal-to-Noise Ratio:  %.4f\n", signal_variance / noise_variance))
+
+# Create data frame
+full_data <- data.frame(Y = Y, X)
+```
+
+**Why Calculate Theoretical R² and SNR? To verify Data Generation Quality**
+
+1.  **R² = 0.88**
+
+    -   88% of Y's variance comes from true predictors (X₁, X₂, X₃, X₆, X₈, X₁₁, X₁₅)
+
+    -   12% comes from random noise
+
+2.  **SNR = 7.65**
+
+    -   Signal is \~7.6 times larger than noise
+
+    -   This means:
+
+        -   Strong effects (like β₁ = 3. 5) will definitely be detected
+
+        -   Weak effects (like β₁₅ = -0.9) might be borderline
+
+        -   Noise variables won't accidentally look important
+
+#### 2. Split your data set into a training set containing 100 observations and a test set containing 900 observations.
+
+```{r}
+# Set sample sizes
+n_train <- 100
+n_test <- 900
+
+# Randomly sample indices for training set
+train_indices <- sample(1:n, n_train, replace = FALSE)
+test_indices <- setdiff(1:n, train_indices)
+
+# Create training and test sets
+train_data <- full_data[train_indices, ]
+test_data <- full_data[test_indices, ]
+
+cat(sprintf("Training set size: %d observations\n", n_train))
+cat(sprintf("Test set size:  %d observations\n", n_test))
+cat(sprintf("Total:  %d observations\n", n))
+```
+
+#### 3. Perform best subset selection on the training set, and plot the training set MSE associated with the best model of each size.
+
+```{r}
+# Perform best subset selection
+# This fits all possible models and keeps the best model of each size
+regfit_full <- regsubsets(Y ~ ., data = train_data, nvmax = p, method = "exhaustive")
+
+# Get summary
+reg_summary <- summary(regfit_full)
+
+cat("Best Subset Selection Complete\n")
+cat(sprintf("Models fitted: %d (one for each size from 1 to %d variables)\n", p, p))
+
+reg_summary
+```
+
+**Variables Selected (from your output):**
+
+| **Model Size** | **Variables Selected**                                    |
+|----------------|-----------------------------------------------------------|
+| 1              | **X1** (strongest predictor, β=3.5)                       |
+| 2              | **X1, X2** (β=3.5, -2.8)                                  |
+| 3              | **X1, X2, X6** (adding another strong predictor)          |
+| 4              | **X1, X2, X6, X8**                                        |
+| 5              | **X1, X2, X3, X6, X8**                                    |
+| 6              | **X1, X2, X3, X6, X8, X11**                               |
+| 7              | **X1, X2, X3, X6, X8, X11, X15** (all true predictors!) ✓ |
+| 8-20           | Gradually adds noise variables (X4, X5, X7, etc.)         |
+
+**Note**: By size 7, the model has captured all true predictors:
+
+-   True non-zero: X1, X2, X3, X6, X8, X11, X15
+
+-   Selected at size 7: X1, X2, X3, X6, X8, X11, X15 (Perfect Match)
+
+This demonstrates that the **last 13 variables add very little to training fit**, yet they are **all noise variables**. This is the essence of overfitting that Part 4 will expose.
+
+```{r}
+predict.regsubsets <- function(object, newdata, id, ...) {
+  form <- as.formula(object$call[[2]])
+  mat <- model.matrix(form, newdata)
+  coefi <- coef(object, id = id)
+  xvars <- names(coefi)
+  mat[, xvars] %*% coefi
+}
+
+# Calculate training MSE for each model size
+train_mse <- rep(NA, p)
+
+for (i in 1:p) {
+  # Predict on training set
+  y_train_pred <- predict.regsubsets(regfit_full, train_data, id = i)
+  
+  # Calculate training MSE
+  train_mse[i] <- mean((train_data$Y - y_train_pred)^2)
+}
+
+cat("\n\nTraining Set MSE for Each Model Size:\n")
+train_mse_df <- data.frame(
+  Model_Size = 1:p,
+  Training_MSE = train_mse,
+  Training_RMSE = sqrt(train_mse)
+)
+print(train_mse_df)
+
+cat(sprintf("\nMinimum Training MSE: %.4f (Model Size:  %d)\n", 
+            min(train_mse), which.min(train_mse)))
+```
+
+```{r}
+p1 <- ggplot(data.frame(Model_Size = 1:p, MSE = train_mse), 
+             aes(x = Model_Size, y = MSE)) +
+  geom_line(color = "blue", size = 1.2) +
+  geom_point(color = "blue", size = 3) +
+  geom_point(aes(x = which.min(train_mse), y = min(train_mse)), 
+             color = "red", size = 5, shape = 18) +
+  geom_vline(xintercept = true_model_size, linetype = "dashed", 
+             color = "darkgreen", size = 1) +
+  annotate("text", x = true_model_size, y = max(train_mse), 
+           label = paste("True Model\nSize =", true_model_size), 
+           hjust = -0.1, color = "darkgreen", fontface = "bold") +
+  labs(title = "Part 3: Training Set MSE vs Model Size",
+       subtitle = "Best subset selection on training set",
+       x = "Number of Variables in Model",
+       y = "Training Set MSE") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12))
+p1
+```
+
+**Plot Interpretation**
+
+The plot shows the **training set MSE** for the best model of each size (1 to 20 variables) obtained through best subset selection.
+
+**Key Observations:**
+
+1.  **Monotonic Decrease**: Training MSE decreases consistently as more variables are added to the model
+
+    -   1 variable: MSE ≈ 21.5
+
+    -   7 variables (true model size): MSE ≈ 3.5
+
+    -   20 variables (full model): MSE ≈ 2.8 (minimum, marked with red diamond)
+
+2.  **Steep Initial Decline**: The most dramatic improvement occurs in the first few variables:
+
+    -   Adding X1 (1st variable): MSE drops from \~21.5 to \~12.5
+
+    -   Adding X2 (2nd variable): MSE drops to \~8.8
+
+    -   Adding X6 (3rd variable): MSE drops to \~6.7
+
+3.  **Diminishing Returns**: After \~7 variables, improvements become minimal:
+
+    -   Variables 7-20 only reduce MSE by \~0.7 (from 3.5 to 2.8)
+
+    -   The curve flattens significantly
+
+4.  **True Model Size (Green Dashed Line)**:
+
+    -   Marked at 7 variables (the true number of non-zero coefficients)
+
+    -   At this point, training MSE ≈ 3.3
+
+    -   Additional 13 variables only reduce MSE by 15%
 
 4\. Plot the test set MSE associated with the best model of each size.
 
+```{r}
+# Calculate test MSE for each model size
+test_mse <- rep(NA, p)
+
+for (i in 1:p) {
+  # Predict on test set
+  y_test_pred <- predict.regsubsets(regfit_full, test_data, id = i)
+  
+  # Calculate test MSE
+  test_mse[i] <- mean((test_data$Y - y_test_pred)^2)
+}
+
+cat("Test Set MSE for Each Model Size:\n")
+comparison_df <- data.frame(
+  Model_Size = 1:p,
+  Training_MSE = train_mse,
+  Test_MSE = test_mse,
+  Difference = test_mse - train_mse,
+  Ratio = test_mse / train_mse
+)
+print(comparison_df)
+
+cat(sprintf("\nMinimum Test MSE: %.4f (Model Size: %d)\n", 
+            min(test_mse), which.min(test_mse)))
+cat(sprintf("True Model Size: %d\n", true_model_size))
+```
+
+```{r}
+# Prepare data for plotting
+plot_data <- data.frame(
+  Model_Size = rep(1:p, 2),
+  MSE = c(train_mse, test_mse),
+  Dataset = rep(c("Training", "Test"), each = p)
+)
+
+# Plot 1: Training MSE only (Part 3)
+p1 <- ggplot(data.frame(Model_Size = 1:p, MSE = train_mse), 
+             aes(x = Model_Size, y = MSE)) +
+  geom_line(color = "blue", size = 1.2) +
+  geom_point(color = "blue", size = 3) +
+  geom_point(aes(x = which.min(train_mse), y = min(train_mse)), 
+             color = "red", size = 5, shape = 18) +
+  geom_vline(xintercept = true_model_size, linetype = "dashed", 
+             color = "darkgreen", size = 1) +
+  annotate("text", x = true_model_size, y = max(train_mse), 
+           label = paste("True Model\nSize =", true_model_size), 
+           hjust = -0.1, color = "darkgreen", fontface = "bold") +
+  labs(title = "Part 3: Training Set MSE vs Model Size",
+       subtitle = "Best subset selection on training set",
+       x = "Number of Variables in Model",
+       y = "Training Set MSE") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12))
+
+# Plot 2: Test MSE only (Part 4)
+p2 <- ggplot(data.frame(Model_Size = 1:p, MSE = test_mse), 
+             aes(x = Model_Size, y = MSE)) +
+  geom_line(color = "red", size = 1.2) +
+  geom_point(color = "red", size = 3) +
+  geom_point(aes(x = which.min(test_mse), y = min(test_mse)), 
+             color = "darkred", size = 5, shape = 18) +
+  geom_vline(xintercept = true_model_size, linetype = "dashed", 
+             color = "darkgreen", size = 1) +
+  annotate("text", x = true_model_size, y = max(test_mse), 
+           label = paste("True Model\nSize =", true_model_size), 
+           hjust = -0.1, color = "darkgreen", fontface = "bold") +
+  labs(title = "Part 4: Test Set MSE vs Model Size",
+       subtitle = "Performance on held-out test set",
+       x = "Number of Variables in Model",
+       y = "Test Set MSE") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12))
+
+# Plot 3: Both training and test MSE (Combined view)
+p3 <- ggplot(plot_data, aes(x = Model_Size, y = MSE, color = Dataset, group = Dataset)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  geom_point(data = data.frame(Model_Size = which.min(train_mse), 
+                                MSE = min(train_mse), 
+                                Dataset = "Training"),
+             size = 5, shape = 18, color = "blue") +
+  geom_point(data = data.frame(Model_Size = which.min(test_mse), 
+                                MSE = min(test_mse), 
+                                Dataset = "Test"),
+             size = 5, shape = 18, color = "red") +
+  geom_vline(xintercept = true_model_size, linetype = "dashed", 
+             color = "darkgreen", size = 1) +
+  annotate("text", x = true_model_size, y = max(c(train_mse, test_mse)), 
+           label = paste("True Model Size =", true_model_size), 
+           hjust = -0.1, color = "darkgreen", fontface = "bold", size = 4) +
+  scale_color_manual(values = c("Training" = "blue", "Test" = "red")) +
+  labs(title = "Training vs Test Set MSE",
+       subtitle = sprintf("Minimum Test MSE at %d variables (True model:  %d variables)", 
+                         which.min(test_mse), true_model_size),
+       x = "Number of Variables in Model",
+       y = "Mean Squared Error (MSE)",
+       color = "Dataset") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12),
+        legend.position = "top")
+
+# Plot 4: Difference between test and training MSE (Overfitting)
+p4 <- ggplot(data.frame(Model_Size = 1:p, Difference = test_mse - train_mse), 
+             aes(x = Model_Size, y = Difference)) +
+  geom_line(color = "purple", size = 1.2) +
+  geom_point(color = "purple", size = 3) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  geom_vline(xintercept = true_model_size, linetype = "dashed", 
+             color = "darkgreen", size = 1) +
+  labs(title = "Generalization Gap: Test MSE - Training MSE",
+       subtitle = "Positive values indicate overfitting",
+       x = "Number of Variables in Model",
+       y = "Test MSE - Training MSE") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(size = 12))
+
+# Display plots
+print(p1)
+cat("\nPress [Enter] to see next plot...")
+invisible(readline())
+
+print(p2)
+cat("\nPress [Enter] to see next plot...")
+invisible(readline())
+
+print(p3)
+cat("\nPress [Enter] to see next plot...")
+invisible(readline())
+
+print(p4)
+```
+
 5\. For which model size does the test set MSE take on its minimum value? Comment on your results. If it takes on its minimum value for a model containing only an intercept or a model containing all of the features, then play around with the way that you are generating the data in (1) until you come up with a scenario in which the test set MSE is minimized for an intermediate model size.
+
+```{r}
+optimal_size <- which.min(test_mse)
+optimal_test_mse <- min(test_mse)
+cat("Optimal size:", optimal_size)
+cat("\nOptimal test MSE:", optimal_test_mse)
+```
+
+# Supplement Exercise
+
+## Exercise 1: Analyzing E-commerce Shipping Performance
+
+Suppose you have a dataset shipping data.csv containing n= 1500 deliveries from a global online retailer. The goal is to predict the total Transit Time (the number of days from dispatch to arrival) using various shipment characteristics. The dataset includes the following variables:
+
+• TransitTime: Total days in transit (Outcome).
+
+• Weight: Package weight in kilograms.
+
+• Distance: Distance between the warehouse and the customer (km).
+
+• Carrier: The shipping company used (e.g., DHL, FedEx, UPS).
+
+• ShipMode: Economy, Standard, or Express.
+
+• Region: Geographical region of the customer destination.
+
+• Holiday: A binary indicator (1 if the transit occurred during a peak holiday season, 0 otherwise).
+
+### Tasks
+
+\(a\) Read the data into R. Fit a multiple linear regression model with TransitTime as the outcome and all other variables as covariates. Provide a summary of the estimated coefficients, including their standard errors and p-values.
+
+\(b\) Use R to calculate the 99% confidence intervals for all regression coefficients. Based on these intervals, determine which predictors have a statistically significant relationship with shipping speed at the α= 0.01 level.
+
+\(c\) Reproduce the least squares estimate of the error variance σ2. Hint: Use the residuals() function to obtain the residuals ei, and calculateˆσ2=e2 in−p−1.
+
+\(d\) Use Rto estimate both the coefficient of determination R2 and the adjusted R2 adj . Compare these values with the output provided in the model summary from part (a).
+
+\(e\) Use backward selection by means of the stepAIC function from the MASS library to find the best model according to the Akaike Information Criterion (AIC).
+
+\(f\) Obtain the R2 adj from the reduced model identified in (e) and compare it to the full model from (a). Discuss whether the reduction in variables significantly impacted the model’s explanatory power.
+
+\(g\) Identify whether the fundamental model assumptions are satisfied. Generate and interpret a ”Residuals vs Fitted” plot and a ”Normal Q-Q” plot to check for heteroscedasticity and non-normality.
+
+\(h\) Based on the model in (e), are specific Carriers or Holiday periods causing the delivery time to be significantly delayed? Interpret the magnitude of the Holiday coefficient in terms of days.
+
+\(i\) Test whether it is useful to add a quadratic polynomial of Weight (i.e., Weight2) to the model. Perform a partial F-test to compare the model with and without the quadratic term
+
+\(j\) Use the model identified in (e) to predict the transit time for a new delivery with: Weight = 5.2kg, Distance = 450km, Carrier = ”FedEx”, ShipMode = ”Standard”,and Holiday = 0. Use the predict() command to report a 95% prediction interval.
+
+## Exercise 2: National Football League Team Performance (1976)
+
+Table B.1 presents data on the performance of the 28 teams in the National Football League (NFL) during the 1976 season. The response variable and explanatory variables are defined as follows:
+
+### Variables Description
+
+• `y`: Number of games won in a 14-game season
+
+• `x1`: Rushing yards (season)
+
+• `x2`: Passing yards (season)
+
+• `x3`: Punting average (yards per punt)
+
+• `x4`: Field goal percentage (field goals made divided by field goals attempted)
+
+• `x5`: Turnover differential (turnovers gained minus turnovers lost)
+
+• `x6`: Penalty yards (season)
+
+• `x7`: Percentage of rushing plays
+
+• `x8`: Opponents’ rushing yards (season)
+
+• `x9`: Opponents’ passing yards (season)
+
+### Exercises
+
+Using the number of games won ($y$) as the response variable, answer the following:
+
+1\. Use **forward selection** to specify an appropriate subset regression model.
+
+```{r}
+library(MASS)      # For stepAIC function
+library(leaps)     # For all possible regressions
+library(car)       # For VIF and other diagnostics
+library(tidyverse) # For data manipulation and visualization
+
+# Read the NFL 1976 dataset from CSV file
+nfl_data <- read.csv("~/Documents/I4-AMS-B/Statistical-Modeling/statistical-modeling-tp/TP3/NFL_1976_Team_Performance.csv", header = TRUE)
+
+# Display the dataset
+cat("NFL 1976 Dataset:\n")
+print(nfl_data)
+
+cat("\n\nDataset Structure:\n")
+str(nfl_data)
+
+cat("\n\nFirst few rows:\n")
+head(nfl_data)
+
+# Summary statistics
+cat("\n\nSummary Statistics:\n")
+summary(nfl_data[, -1])  # Exclude team names
+
+# Correlation matrix
+cat("\n\nCorrelation Matrix:\n")
+cor_matrix <- cor(nfl_data[, -1])
+print(round(cor_matrix, 3))
+```
+
+```{r}
+# Start with null model
+null_model <- lm(y ~ 1, data = nfl_data)
+full_model <- lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, data = nfl_data)
+
+# Forward selection using AIC
+forward_model <- stepAIC(null_model, 
+                         scope = list(lower = null_model, upper = full_model),
+                         direction = "forward",
+                         trace = TRUE)
+
+cat("\n\nForward Selection - Final Model:\n")
+print(summary(forward_model))
+
+cat("\n\nForward Selection - Selected Variables:\n")
+forward_vars <- names(coef(forward_model))[-1]
+print(forward_vars)
+
+cat("\n\nForward Selection - Model Formula:\n")
+print(formula(forward_model))
+```
+
+2\. Use **backward elimination** to specify an appropriate subset regression model.
+
+3\. Use **stepwise regression** to specify an appropriate subset regression model.
+
+4\. Apply **all possible regressions** to the data. For each candidate model, evaluate the criteria $R^2_p$, Mallows’ $C_p$, and the mean square of the residuals (MSRes). Based on these measures, recommend a final subset regression model.
+
+5\. Compare and contrast the models obtained in parts (a)–(d). Discuss similarities, differences, and the stability of the selected variables across the different selection methods.
