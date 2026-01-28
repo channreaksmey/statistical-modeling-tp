@@ -1,0 +1,48 @@
+/* Apply only when printing */
+@media print {
+
+  /* Page setup */
+  @page {
+    margin: 1.6cm;
+  }
+
+  /* Body text */
+  body {
+    font-size: 11pt;
+    line-height: 1.25;
+  }
+
+  /* Headings: tighter spacing */
+  h1, h2, h3, h4 {
+    margin-top: 0.6em;
+    margin-bottom: 0.4em;
+  }
+
+  /* Paragraph spacing */
+  p {
+    margin-bottom: 0.4em;
+  }
+
+  /* Figures & tables */
+  figure, table {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    break-inside: avoid;
+  }
+
+  /* Code blocks */
+  pre {
+    font-size: 9.5pt;
+    line-height: 1.2;
+  }
+
+  /* Remove URL clutter */
+  a::after {
+    content: "";
+  }
+
+  /* Hide unnecessary UI elements */
+  nav, header, footer {
+    display: none !important;
+  }
+}
